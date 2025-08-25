@@ -1,29 +1,17 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import './globals.css';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
-
+// This is the root layout of your app.
+// It defines the main navigation flow.
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
-
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
+    return (
+        <Stack>
+            {/* This is the key line.
+        It tells the main Stack to not show a header for the (tabs) group.
+        Since the login screen is inside (tabs), it will no longer have a header.
+      */}
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            {/* You can add other screens here that are not part of the tabs. */}
+        </Stack>
+    );
 }
