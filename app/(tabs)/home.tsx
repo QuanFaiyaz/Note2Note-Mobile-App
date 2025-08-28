@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, FlatList } from 'react-native';
+import { Feather, FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { MaterialIcons, Feather, FontAwesome, Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 // This is the main component for your home page, designed to match the provided image.
 export default function HomePage() {
@@ -40,25 +40,30 @@ export default function HomePage() {
 
     // Helper component for the note cards
     // The w-1/2 class is applied here to ensure two columns.
-    const NoteCard = ({ note }) => (
-        <View className="w-1/2 p-2">
-            <View className="bg-gray-200 p-4 rounded-lg mb-4">
-                <Text className="text-gray-800 font-bold mb-1">{note.title}</Text>
-                <Text className="text-gray-600 text-sm">{note.subject}</Text>
-                <Text className="text-gray-500 text-xs mt-1">By {note.sharedBy}</Text>
-                <View className="flex-row items-center justify-end mt-2">
-                    {/* Icons from MaterialIcons, FontAwesome, and Feather */}
-                    <TouchableOpacity className="ml-2">
+    type Note = {
+        id: string;
+        title: string;
+        subject: string;
+        sharedBy: string;
+    };
+
+    const NoteCard: React.FC<{ note: Note }> = ({ note }) => (
+        <View style={styles.noteCardContainer} key={note.id}>
+            <View style={styles.noteCard}>
+                <Text style={styles.noteTitle}>{note.title}</Text>
+                <Text style={styles.noteSubject}>{note.subject}</Text>
+                <Text style={styles.noteSharedBy}>By {note.sharedBy}</Text>
+                <View style={styles.noteIconsRow}>
+                    <TouchableOpacity style={styles.iconButton}>
                         <MaterialIcons name="favorite-border" size={16} color="#888" />
                     </TouchableOpacity>
-                    <TouchableOpacity className="ml-2">
+                    <TouchableOpacity style={styles.iconButton}>
                         <FontAwesome name="commenting-o" size={16} color="#888" />
                     </TouchableOpacity>
-                    <TouchableOpacity className="ml-2">
+                    <TouchableOpacity style={styles.iconButton}>
                         <Feather name="share-2" size={16} color="#888" />
                     </TouchableOpacity>
-                    {/* Bookmark Icon */}
-                    <TouchableOpacity className="ml-2">
+                    <TouchableOpacity style={styles.iconButton}>
                         <FontAwesome name="bookmark-o" size={16} color="#888" />
                     </TouchableOpacity>
                 </View>
@@ -67,7 +72,7 @@ export default function HomePage() {
     );
 
     // A mapping to get the correct icon for each subject
-    const getSubjectIcon = (subjectName) => {
+    const getSubjectIcon = (subjectName: string) => {
         const color = activeSubject === subjectName ? 'white' : 'gray';
         switch(subjectName) {
             case 'ALL':
@@ -85,23 +90,24 @@ export default function HomePage() {
         }
     };
 
+    const subjects = ['ALL', 'Subject 1', 'Subject 2', 'Subject 3', 'Subject 4'];
+
     return (
-        <View className="flex-1 bg-gray-100">
-            {/* Dark Blue Header */}
-            <SafeAreaView className="bg-blue-900 h-24 w-full pt-8 pb-4">
-                <TouchableOpacity onPress={handleLogout} className="ml-4 justify-around">
+        <View style={styles.container}>
+            {/* Header */}
+            <SafeAreaView style={styles.header}>
+                <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
                     <MaterialIcons name="logout" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
-                {/* This header is now just for the top area, no search bar here anymore */}
             </SafeAreaView>
 
-            {/* Search bar section, now placed below the header */}
-            <View className="mx-4 mt-4 z-10">
-                <View className="bg-white p-4 rounded-xl shadow-sm">
-                    <View className="flex-row items-center">
+            {/* Search Bar */}
+            <View style={styles.searchBarWrapper}>
+                <View style={styles.searchBar}>
+                    <View style={styles.searchBarRow}>
                         <Feather name="search" size={20} color="#6B7280" />
                         <TextInput
-                            className="flex-1 text-gray-800 text-base ml-2"
+                            style={styles.searchInput}
                             placeholder="Search notes..."
                             placeholderTextColor="#6B7280"
                             value={searchQuery}
@@ -112,79 +118,112 @@ export default function HomePage() {
                 </View>
             </View>
 
-            {/* Main scrollable content with padding */}
-            <ScrollView className="flex-1 p-5">
-                {/* Subjects and Add Note button */}
-                <View className="flex-row justify-between items-center mb-4">
-                    <Text className="text-xl font-bold text-blue-900">SUBJECTS</Text>
-                    <View className="flex-row">
-                        <TouchableOpacity onPress={handleAddNote} className="bg-blue-900 rounded-full px-4 py-2 mr-2">
-                            <Text className="text-white text-sm font-semibold">ADD NOTE</Text>
+            {/* Main Content */}
+            <ScrollView style={styles.mainScroll}>
+                <View style={styles.subjectsHeaderRow}>
+                    <Text style={styles.subjectsHeaderText}>SUBJECTS</Text>
+                    <View style={styles.subjectsHeaderButtons}>
+                        <TouchableOpacity onPress={handleAddNote} style={styles.addNoteButton}>
+                            <Text style={styles.addNoteButtonText}>ADD NOTE</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => console.log('Upload a Note pressed')} className="border-2 border-blue-900 rounded-full px-4 py-2">
-                            <Text className="text-blue-900 text-sm font-semibold">Upload a Note</Text>
+                        <TouchableOpacity onPress={() => console.log('Upload a Note pressed')} style={styles.uploadNoteButton}>
+                            <Text style={styles.uploadNoteButtonText}>Upload a Note</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
 
-                {/* Subject tabs with icons */}
-                <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} className="mb-4">
-                    {['ALL', 'Subject 1', 'Subject 2', 'Subject 3', 'Subject 4'].map(subject => (
+                {/* Subject Tabs */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subjectTabsScroll}>
+                    {subjects.map(subject => (
                         <TouchableOpacity
                             key={subject}
                             onPress={() => setActiveSubject(subject)}
-                            className={`h-12 py-2 px-4 rounded-full mr-2 flex-row items-center ${activeSubject === subject ? 'bg-blue-900' : 'bg-gray-300'}`}
+                            style={[
+                                styles.subjectTab,
+                                activeSubject === subject ? styles.subjectTabActive : styles.subjectTabInactive
+                            ]}
                         >
                             {getSubjectIcon(subject)}
-                            <Text className={`ml-1 ${activeSubject === subject ? 'text-white' : 'text-gray-700'}`}>
+                            <Text style={[
+                                styles.subjectTabText,
+                                activeSubject === subject ? styles.subjectTabTextActive : styles.subjectTabTextInactive
+                            ]}>
                                 {subject}
                             </Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
 
-                {/* Notes content in a grid */}
-                <View className="flex-row flex-wrap justify-between">
+                {/* Notes Grid */}
+                <View style={styles.notesGrid}>
                     {myNotes.map(note => (
                         <NoteCard key={note.id} note={note} />
                     ))}
                 </View>
             </ScrollView>
 
-            {/* Bottom Navigation Bar */}
-            <SafeAreaView className="bg-blue-900 shadow-lg">
-                <View className="flex-row justify-around items-center h-17">
-                    {/* Home Icon */}
-                    <TouchableOpacity className="items-center">
+            {/* Bottom Navigation */}
+            <SafeAreaView style={styles.bottomNav}>
+                <View style={styles.bottomNavRow}>
+                    <TouchableOpacity style={styles.bottomNavItem}>
                         <MaterialIcons name="home" size={24} color="#FFFFFF" />
-                        <Text className="text-white text-xs mt-1">Home</Text>
+                        <Text style={styles.bottomNavText}>Home</Text>
                     </TouchableOpacity>
-
-                    {/* Discussion Icon */}
-                    <TouchableOpacity className="items-center">
+                    <TouchableOpacity style={styles.bottomNavItem} onPress={() => router.replace('/discussion')}>
                         <MaterialIcons name="groups" size={24} color="#FFFFFF" />
-                        <Text className="text-white text-xs mt-1">Discussion</Text>
+                        <Text style={styles.bottomNavText}>Discussion</Text>
                     </TouchableOpacity>
-
-                    {/* Notes Icon */}
-                    <TouchableOpacity className="items-center">
+                    <TouchableOpacity style={styles.bottomNavItem}>
                         <MaterialIcons name="notes" size={24} color="#FFFFFF" />
-                        <Text className="text-white text-xs mt-1">Notes</Text>
+                        <Text style={styles.bottomNavText}>Notes</Text>
                     </TouchableOpacity>
-
-                    {/* Files Icon */}
-                    <TouchableOpacity className="items-center">
+                    <TouchableOpacity style={styles.bottomNavItem}>
                         <MaterialIcons name="folder" size={24} color="#FFFFFF" />
-                        <Text className="text-white text-xs mt-1">Files</Text>
+                        <Text style={styles.bottomNavText}>Files</Text>
                     </TouchableOpacity>
-
-                    {/* Profile Icon */}
-                    <TouchableOpacity className="items-center">
+                    <TouchableOpacity style={styles.bottomNavItem}>
                         <MaterialIcons name="person" size={24} color="#FFFFFF" />
-                        <Text className="text-white text-xs mt-1">Profile</Text>
+                        <Text style={styles.bottomNavText}>Profile</Text>
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: '#F3F4F6' },
+    header: { backgroundColor: '#1E3A8A', paddingTop: 32, paddingBottom: 16 },
+    logoutButton: { marginLeft: 16 },
+    searchBarWrapper: { marginHorizontal: 16, marginTop: 16, zIndex: 10 },
+    searchBar: { backgroundColor: '#fff', padding: 16, borderRadius: 16, elevation: 2 },
+    searchBarRow: { flexDirection: 'row', alignItems: 'center' },
+    searchInput: { flex: 1, color: '#1F2937', fontSize: 16, marginLeft: 8 },
+    mainScroll: { flex: 1, padding: 20 },
+    subjectsHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+    subjectsHeaderText: { fontSize: 20, fontWeight: 'bold', color: '#1E3A8A' },
+    subjectsHeaderButtons: { flexDirection: 'row' },
+    addNoteButton: { backgroundColor: '#1E3A8A', borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8, marginRight: 8 },
+    addNoteButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+    uploadNoteButton: { borderWidth: 2, borderColor: '#1E3A8A', borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
+    uploadNoteButtonText: { color: '#1E3A8A', fontSize: 14, fontWeight: '600' },
+    subjectTabsScroll: { marginBottom: 16 },
+    subjectTab: { height: 48, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 999, marginRight: 8, flexDirection: 'row', alignItems: 'center' },
+    subjectTabActive: { backgroundColor: '#1E3A8A' },
+    subjectTabInactive: { backgroundColor: '#D1D5DB' },
+    subjectTabText: { marginLeft: 4, fontSize: 14 },
+    subjectTabTextActive: { color: '#fff' },
+    subjectTabTextInactive: { color: '#374151' },
+    notesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+    noteCardContainer: { width: '48%', padding: 4 },
+    noteCard: { backgroundColor: '#E5E7EB', padding: 16, borderRadius: 12, marginBottom: 16 },
+    noteTitle: { color: '#1F2937', fontWeight: 'bold', marginBottom: 4 },
+    noteSubject: { color: '#4B5563', fontSize: 14 },
+    noteSharedBy: { color: '#6B7280', fontSize: 12, marginTop: 4 },
+    noteIconsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 8 },
+    iconButton: { marginLeft: 8 },
+    bottomNav: { backgroundColor: '#1E3A8A', elevation: 8 },
+    bottomNavRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', height: 68 },
+    bottomNavItem: { alignItems: 'center' },
+    bottomNavText: { color: '#fff', fontSize: 12, marginTop: 4 },
+});

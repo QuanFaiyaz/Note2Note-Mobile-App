@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, Image, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -17,13 +17,11 @@ export default function LoginPage() {
     };
 
     const handleForgotPassword = () => {
-        console.log('Forgot password link pressed.');
-        // Navigate to the forgot password screen.
+        router.push('/forgot-password');
     };
 
     const handleCreateAccount = () => {
-        console.log('Create account link pressed.');
-        // Navigate to the account creation screen.
+        router.push('/create-account');
     };
 
     return (
@@ -45,7 +43,7 @@ export default function LoginPage() {
                 {/* Login Form */}
                 <View className="w-full max-w-sm mx-auto">
                     {/* Email Input */}
-                    <Text className="text-gray-700 font-medium mb-1">Email</Text>
+                    {/* <Text className="text-gray-700 font-medium mb-1">Email</Text> */}
                     <TextInput
                         className="w-full h-12 border border-gray-300 rounded-lg px-4 mb-4"
                         placeholder="your-email@nu-dasma.edu.ph"
@@ -79,7 +77,9 @@ export default function LoginPage() {
                             <Text className="text-gray-600 text-sm">Remember me</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={handleForgotPassword}>
-                            <Text className="text-blue-600 text-sm font-semibold">Forgot password?</Text>
+                            <Text style={{ color: '#1E3A8A', fontWeight: '600', textAlign: 'right', marginBottom: 16 }}>
+                                Forgot password?
+                            </Text>
                         </TouchableOpacity>
                     </View>
 

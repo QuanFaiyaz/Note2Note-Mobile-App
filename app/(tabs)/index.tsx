@@ -1,6 +1,6 @@
-import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
+import { Text, View } from "react-native";
 
 export default function WelcomeScreen() {
     const router = useRouter();
@@ -9,7 +9,7 @@ export default function WelcomeScreen() {
         // Set a timer to navigate to the login page after 3000 milliseconds (3 seconds)
         const timer = setTimeout(() => {
             router.replace('/login');
-        }, 1000);
+        }, 3000);
 
         // This is a cleanup function. It will clear the timer if the component unmounts
         // before the 3 seconds are up, preventing a memory leak.

@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import React from 'react';
 import './globals.css';
 
 // This is the root layout of your app.

@@ -1,10 +1,13 @@
 import { Tabs } from 'expo-router';
+import React from 'react';
 
 export default function TabLayout() {
     return (
         <Tabs
-            screenOptions={{ headerShown: false }} // Keep headers hidden on all screens
-            tabBar={() => null} // This line hides the entire tab bar
+            screenOptions={{
+                headerShown: false,
+                tabBarStyle: { display: 'none' }, // Hides the tab bar
+            }}
         >
             <Tabs.Screen name="index" />
             <Tabs.Screen name="home" />
