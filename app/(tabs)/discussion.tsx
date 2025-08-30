@@ -1,12 +1,18 @@
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function DiscussionPage() {
     const router = useRouter();
     const [search, setSearch] = useState('');
     const [activeYear, setActiveYear] = useState('ALL');
+    const [modalVisible, setModalVisible] = useState(false);
+    const [newTitle, setNewTitle] = useState('');
+    const [newDesc, setNewDesc] = useState('');
+    const [replyModalVisible, setReplyModalVisible] = useState(false);
+    const [selectedDiscussion, setSelectedDiscussion] = useState(null);
+    const [replyText, setReplyText] = useState(''); // <-- Add this
 
     const years = ['ALL', '1st year', '2nd year', '3rd year', '4th year'];
 
@@ -29,6 +35,109 @@ export default function DiscussionPage() {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
+            {/* Add Discussion Modal */}
+            <Modal
+                visible={modalVisible}
+                animationType="fade"
+                transparent
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        style={styles.modalContainer}
+                    >
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>ADD NEW DISCUSSION</Text>
+                            <TouchableOpacity
+                                style={styles.modalClose}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Ionicons name="close" size={28} color="#222" />
+                            </TouchableOpacity>
+                            <Text style={styles.modalLabel}>Title</Text>
+                            <TextInput
+                                style={styles.modalInput}
+                                placeholder="Enter discussion title"
+                                placeholderTextColor="#444"
+                                value={newTitle}
+                                onChangeText={setNewTitle}
+                            />
+                            <Text style={styles.modalLabel}>Description</Text>
+                            <TextInput
+                                style={styles.modalTextarea}
+                                placeholder="Write your discussion description here..."
+                                placeholderTextColor="#444"
+                                value={newDesc}
+                                onChangeText={setNewDesc}
+                                multiline
+                                numberOfLines={5}
+                                textAlignVertical="top"
+                            />
+                            <TouchableOpacity
+                                style={styles.modalSaveBtn}
+                                onPress={() => {
+                                    // Save logic here
+                                    setModalVisible(false);
+                                    setNewTitle('');
+                                    setNewDesc('');
+                                }}
+                            >
+                                <Text style={styles.modalSaveBtnText}>Save discussion</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </KeyboardAvoidingView>
+                </View>
+            </Modal>
+
+            {/* Reply Modal */}
+            <Modal
+                visible={replyModalVisible}
+                animationType="fade"
+                transparent
+                onRequestClose={() => setReplyModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.replyModalContainer}>
+                        <Text style={styles.replyModalTitle}>
+                            {selectedDiscussion?.title}
+                        </Text>
+                        <Text style={styles.replyModalContent}>
+                            {selectedDiscussion?.content}
+                        </Text>
+                        <TextInput
+                            style={styles.replyInput}
+                            placeholder="Write a reply..."
+                            placeholderTextColor="#aaa"
+                            value={replyText}
+                            onChangeText={setReplyText}
+                            multiline
+                        />
+                        <View style={styles.replyModalButtonRow}>
+                            <TouchableOpacity
+                                style={styles.replyModalCloseBtn}
+                                onPress={() => {
+                                    setReplyModalVisible(false);
+                                    setReplyText('');
+                                }}
+                            >
+                                <Text style={styles.replyModalCloseBtnText}>Close</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.replyModalReplyBtn}
+                                onPress={() => {
+                                    // Add reply logic here
+                                    setReplyModalVisible(false);
+                                    setReplyText('');
+                                }}
+                            >
+                                <Text style={styles.replyModalReplyBtnText}>Reply</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.replace('/home')} style={{ position: 'absolute', left: 16, top: 40 }}>
@@ -71,7 +180,10 @@ export default function DiscussionPage() {
                                 </Text>
                             </TouchableOpacity>
                         ))}
-                        <TouchableOpacity style={styles.addDiscussionButton}>
+                        <TouchableOpacity
+                            style={styles.addDiscussionButton}
+                            onPress={() => setModalVisible(true)}
+                        >
                             <Text style={styles.addDiscussionButtonText}>+ADD DISCUSSION</Text>
                         </TouchableOpacity>
                     </ScrollView>
@@ -96,7 +208,14 @@ export default function DiscussionPage() {
                             <Text style={styles.discussionContent}>{d.content}</Text>
                             <View style={styles.discussionFooter}>
                                 <Text style={styles.discussionDate}>{d.date}</Text>
-                                <Text style={styles.discussionReplies}>{d.replies} replies</Text>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setSelectedDiscussion(d);
+                                        setReplyModalVisible(true);
+                                    }}
+                                >
+                                    <Text style={styles.discussionReplies}>{d.replies} replies</Text>
+                                </TouchableOpacity>
                             </View>
                         </View>
                     ))}
@@ -269,5 +388,127 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 4,
         fontFamily: 'sans-serif',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContainer: {
+        width: '90%',
+        maxWidth: 400,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        padding: 24,
+        alignSelf: 'center',
+    },
+    modalContent: {
+        position: 'relative',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 18,
+        letterSpacing: 1,
+    },
+    modalClose: {
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        padding: 4,
+    },
+    modalLabel: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: 16,
+        marginBottom: 6,
+    },
+    modalInput: {
+        backgroundColor: '#e5e5e5',
+        borderRadius: 2,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        fontSize: 15,
+        marginBottom: 8,
+    },
+    modalTextarea: {
+        backgroundColor: '#e5e5e5',
+        borderRadius: 2,
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        fontSize: 15,
+        minHeight: 100,
+        marginBottom: 18,
+    },
+    modalSaveBtn: {
+        backgroundColor: '#7B89C2',
+        borderRadius: 2,
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        alignSelf: 'flex-start',
+        marginTop: 8,
+    },
+    modalSaveBtnText: {
+        color: '#fff',
+        fontSize: 15,
+    },
+    replyModalContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        padding: 24,
+        width: 320,
+        alignSelf: 'center',
+        alignItems: 'flex-start',
+    },
+    replyModalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 12,
+        color: '#22223B',
+    },
+    replyModalContent: {
+        fontSize: 15,
+        color: '#9CA3AF',
+        marginBottom: 28,
+    },
+    replyModalButtonRow: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        width: '100%',
+    },
+    replyModalCloseBtn: {
+        backgroundColor: '#e5e5e5',
+        borderRadius: 2,
+        paddingVertical: 10,
+        paddingHorizontal: 24,
+        marginRight: 12,
+    },
+    replyModalCloseBtnText: {
+        color: '#22223B',
+        fontSize: 15,
+    },
+    replyModalReplyBtn: {
+        backgroundColor: '#7B89C2',
+        borderRadius: 2,
+        paddingVertical: 10,
+        paddingHorizontal: 24,
+    },
+    replyModalReplyBtnText: {
+        color: '#fff',
+        fontSize: 15,
+    },
+    replyInput: {
+        backgroundColor: '#f3f4f6',
+        borderRadius: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        fontSize: 15,
+        color: '#22223B',
+        width: '100%',
+        minHeight: 40,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#e5e5e5',
     },
 });
