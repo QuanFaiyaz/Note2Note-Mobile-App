@@ -173,7 +173,7 @@ export default function HomePage() {
                         <MaterialIcons name="groups" size={24} color="#FFFFFF" />
                         <Text style={styles.bottomNavText}>Discussion</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.bottomNavItem}>
+                    <TouchableOpacity style={styles.bottomNavItem} onPress={() => router.replace('/notes')}>
                         <MaterialIcons name="notes" size={24} color="#FFFFFF" />
                         <Text style={styles.bottomNavText}>Notes</Text>
                     </TouchableOpacity>

@@ -12,6 +12,10 @@ export default function TabLayout() {
             <Tabs.Screen name="index" />
             <Tabs.Screen name="home" />
             <Tabs.Screen name="login" />
+            <Tabs.Screen name="notes" />
+            <Tabs.Screen name="discussion" />
+            <Tabs.Screen name="create-account" />
+            <Tabs.Screen name="forgot-password" />
         </Tabs>
     );
 }

@@ -1,6 +1,7 @@
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { Image, KeyboardAvoidingView, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function DiscussionPage() {
@@ -11,7 +12,7 @@ export default function DiscussionPage() {
     const [newTitle, setNewTitle] = useState('');
     const [newDesc, setNewDesc] = useState('');
     const [replyModalVisible, setReplyModalVisible] = useState(false);
-    const [selectedDiscussion, setSelectedDiscussion] = useState(null);
+    const [selectedDiscussion, setSelectedDiscussion] = useState<any>(null);
     const [replyText, setReplyText] = useState(''); // <-- Add this
 
     const years = ['ALL', '1st year', '2nd year', '3rd year', '4th year'];
@@ -203,7 +204,7 @@ export default function DiscussionPage() {
                 {/* Discussion List */}
                 <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 }}>
                     {discussions.map((d) => (
-                        <View key={d.id} style={styles.discussionCard}>
+                        <View key={`discussion-${d.id}`} style={styles.discussionCard}>
                             <Text style={styles.discussionTitle}>{d.title}</Text>
                             <Text style={styles.discussionContent}>{d.content}</Text>
                             <View style={styles.discussionFooter}>
@@ -233,7 +234,7 @@ export default function DiscussionPage() {
                         <MaterialIcons name="groups" size={24} color="#fff" />
                         <Text style={styles.bottomNavText}>Discussion</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.bottomNavItem}>
+                    <TouchableOpacity style={styles.bottomNavItem} onPress={() => router.replace('/notes')}>
                         <MaterialIcons name="notes" size={24} color="#fff" />
                         <Text style={styles.bottomNavText}>Notes</Text>
                     </TouchableOpacity>
