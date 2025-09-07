@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { registerUserWithEmail } from '@/lib/api';
+import { registerUserWithEmail } from '../lib/api';
 
 export default function CreateAccountPage() {
     const router = useRouter();
