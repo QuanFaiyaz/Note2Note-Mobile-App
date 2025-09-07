@@ -1,4 +1,4 @@
-import { Feather, FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Feather, FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -177,10 +177,11 @@ export default function HomePage() {
                         <MaterialIcons name="notes" size={24} color="#FFFFFF" />
                         <Text style={styles.bottomNavText}>Notes</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.bottomNavItem}>
-                        <MaterialIcons name="folder" size={24} color="#FFFFFF" />
-                        <Text style={styles.bottomNavText}>Files</Text>
-                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.bottomNavItem} onPress={() => router.replace('/my-files')}>
+    <FontAwesome5 name="files" size={22} color="#fff" />
+    <Text style={styles.bottomNavText}>Files</Text>
+</TouchableOpacity>
+
                     <TouchableOpacity style={styles.bottomNavItem}>
                         <MaterialIcons name="person" size={24} color="#FFFFFF" />
                         <Text style={styles.bottomNavText}>Profile</Text>

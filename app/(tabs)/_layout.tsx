@@ -16,6 +16,7 @@ export default function TabLayout() {
             <Tabs.Screen name="discussion" />
             <Tabs.Screen name="create-account" />
             <Tabs.Screen name="forgot-password" />
+            <Tabs.Screen name="my-files" /> {/* Add this line */}
         </Tabs>
     );
 }

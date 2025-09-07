@@ -1,4 +1,4 @@
-import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 import { useState } from 'react';
@@ -238,10 +238,11 @@ export default function DiscussionPage() {
                         <MaterialIcons name="notes" size={24} color="#fff" />
                         <Text style={styles.bottomNavText}>Notes</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.bottomNavItem}>
-                        <FontAwesome5 name="folder" size={22} color="#fff" />
-                        <Text style={styles.bottomNavText}>Folder</Text>
-                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.bottomNavItem} onPress={() => router.replace('/my-files')}>
+    <MaterialIcons name="folder" size={24} color="#fff" />
+    <Text style={styles.bottomNavText}>Files</Text>
+</TouchableOpacity>
+
                     <TouchableOpacity style={styles.bottomNavItem}>
                         <MaterialIcons name="person" size={24} color="#fff" />
                         <Text style={styles.bottomNavText}>Profile</Text>
