@@ -8,7 +8,7 @@ if (empty($input) && !empty($_POST)) {
     $input = $_POST;
 }
 
-// Support minimal payload: email + password
+// Support minimal payload: email + password only
 if (isset($input['email']) && isset($input['password'])) {
     $input = [
         'Email' => (string)$input['email'],
@@ -21,13 +21,8 @@ if (isset($input['email']) && isset($input['password'])) {
     ];
 }
 
-// Accept either legacy fields or minimal email/password; ensure required exist
-if (!isset($input['Email'])) {
-    // allow legacy without email but still proceed
-    $input['Email'] = isset($input['FirstName']) ? (string)$input['FirstName'] : '';
-}
-
-require_fields($input, ['Email','LastName','FirstName','MiddleName','Course','Password']);
+// Only require the fields that actually exist
+require_fields($input, ['Email','Password']);
 
 try {
     $hash = password_hash((string)$input['Password'], PASSWORD_BCRYPT);

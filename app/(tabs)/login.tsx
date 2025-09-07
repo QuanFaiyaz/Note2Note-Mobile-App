@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { loginWithEmail } from '../lib/api';
+import { loginWithEmail } from '../../lib/api';
 
 export default function LoginPage() {
     const router = useRouter();
