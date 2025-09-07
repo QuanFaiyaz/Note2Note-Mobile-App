@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { loginWithEmail } from '@/lib/api';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -9,11 +10,18 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [remember, setRemember] = useState(false);
 
-    const handleLogin = () => {
-        // Implement your login logic here
-        console.log('Login attempt with:', { email, password });
-        // After successful login, navigate to the main app screen.
-        router.replace('/home');
+    const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert('Missing info', 'Please enter email and password.');
+            return;
+        }
+        try {
+            await loginWithEmail({ email, password });
+            router.replace('/home');
+        } catch (e: any) {
+            const message = e?.message || 'Login failed';
+            Alert.alert('Invalid credentials', message);
+        }
     };
 
     const handleForgotPassword = () => {

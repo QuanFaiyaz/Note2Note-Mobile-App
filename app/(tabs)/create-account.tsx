@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { registerUserWithEmail } from '@/lib/api';
 
 export default function CreateAccountPage() {
     const router = useRouter();
@@ -8,12 +9,24 @@ export default function CreateAccountPage() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    const handleSignUp = () => {
-        if (password !== confirmPassword) {
-            alert('Passwords do not match!');
+    const handleSignUp = async () => {
+        if (!email || !password || !confirmPassword) {
+            Alert.alert('Missing info', 'Please fill in all fields.');
             return;
         }
-        router.replace('/login');
+        if (password !== confirmPassword) {
+            Alert.alert('Passwords do not match', 'Please make sure both passwords are the same.');
+            return;
+        }
+        try {
+            await registerUserWithEmail({ email, password });
+            Alert.alert('Success', 'Account created! You can now sign in.', [
+                { text: 'OK', onPress: () => router.replace('/login') }
+            ]);
+        } catch (e: any) {
+            const message = e?.message || 'Registration failed';
+            Alert.alert('Registration failed', message);
+        }
     };
 
     return (

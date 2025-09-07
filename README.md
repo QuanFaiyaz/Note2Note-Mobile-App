@@ -48,3 +48,30 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Backend (PHP API) quick start
+
+1. Import database
+   - Open phpMyAdmin (`http://localhost/phpmyadmin`)
+   - Create database `note2note`
+   - Import your SQL dump (e.g., `e:\dbn2n\note2note.sql`)
+
+2. Deploy the PHP API
+   - Copy the folder `server/php-api` to your web root, e.g., `C:\xampp\htdocs\note2note-api`
+   - Ensure Apache and MySQL are running (XAMPP/WAMP)
+   - Test: open `http://localhost/note2note-api/subjects/list.php`
+
+3. Configure the mobile app
+   - Edit `app/lib/api.ts` and set `BASE_URL`:
+     - Android emulator: `http://10.0.2.2/note2note-api`
+     - iOS simulator: `http://localhost/note2note-api`
+     - Physical device: `http://<your-computer-LAN-IP>/note2note-api`
+
+4. Example usage
+   - Create a note:
+     ```ts
+     import { createNote, listNotes } from '@/lib/api';
+     await createNote({ user_id: 1, Title: 'Sample', Description: 'Hello', SubjectId: 2 });
+     const { data } = await listNotes(1);
+     ```
+
