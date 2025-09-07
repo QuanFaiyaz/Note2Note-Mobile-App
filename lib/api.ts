@@ -57,7 +57,7 @@ export async function deleteNote(noteId: number) {
 
 export async function registerUserWithEmail(payload: { email: string; password: string }) {
   return handleResponse<{ ok: boolean; user_id: number }>(
-    await fetch(`${BASE_URL}/users/register.php`, {
+    await fetch(`${BASE_URL}/simple-register.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
