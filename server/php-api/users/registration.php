@@ -8,6 +8,9 @@ if (empty($input) && !empty($_POST)) {
     $input = $_POST;
 }
 
+// Debug: log what we received
+error_log('Received data: ' . json_encode($input));
+
 // Support minimal payload: email + password only
 if (isset($input['email']) && isset($input['password'])) {
     $input = [
