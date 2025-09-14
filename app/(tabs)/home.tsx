@@ -232,7 +232,7 @@ export default function HomePage() {
                     <Text style={styles.bottomNavText}>Files</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.bottomNavItem} onPress={() => router.replace('/Profile')}>
+                    <TouchableOpacity style={styles.bottomNavItem} onPress={() => router.replace('/profile')}>
                     <MaterialIcons name="person" size={24} color="#FFFFFF" />
                     <Text style={styles.bottomNavText}>Profile</Text>
                     </TouchableOpacity>

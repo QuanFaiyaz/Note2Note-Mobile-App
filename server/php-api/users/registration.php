@@ -17,30 +17,38 @@ error_log('Received data: ' . json_encode($input));
 if (isset($input['email']) && isset($input['password'])) {
     $input = [
         'Email' => (string)$input['email'],
-        'LastName' => '',
-        'FirstName' => '',
-        'MiddleName' => '',
-        'Course' => '',
+        'FirstName' => (string)($input['firstName'] ?? ''),
+        'LastName' => (string)($input['lastName'] ?? ''),
+        'MiddleName' => (string)($input['middleName'] ?? ''),
+        'Mobile_No' => (string)($input['mobileNo'] ?? ''),
+        'Course' => (string)($input['course'] ?? ''),
         'Password' => (string)$input['password'],
+        'Account_Type' => 'Student',
         'is_Admin' => 0,
+        'status' => 'Pending',
+        'email_verified' => 0,
     ];
 }
 
 // Only require the fields that actually exist
-require_fields($input, ['Email','Password']);
+require_fields($input, ['Email','Password','FirstName','LastName']);
 
 try {
     $hash = password_hash((string)$input['Password'], PASSWORD_BCRYPT);
 
-    $stmt = $pdo->prepare('INSERT INTO users (Email, LastName, FirstName, MiddleName, Course, Password, is_Admin) VALUES (:email, :ln, :fn, :mn, :course, :pwd, :admin)');
+    $stmt = $pdo->prepare('INSERT INTO users (Email, FirstName, LastName, MiddleName, Mobile_No, Course, Account_Type, is_Admin, status, email_verified, Password) VALUES (:email, :fn, :ln, :mn, :mobile, :course, :account_type, :admin, :status, :email_verified, :pwd)');
     $stmt->execute([
         ':email' => (string)$input['Email'],
-        ':ln' => (string)$input['LastName'],
         ':fn' => (string)$input['FirstName'],
+        ':ln' => (string)$input['LastName'],
         ':mn' => (string)$input['MiddleName'],
+        ':mobile' => (string)$input['Mobile_No'],
         ':course' => (string)$input['Course'],
-        ':pwd' => $hash,
+        ':account_type' => (string)$input['Account_Type'],
         ':admin' => isset($input['is_Admin']) ? (int)$input['is_Admin'] : 0,
+        ':status' => (string)$input['status'],
+        ':email_verified' => isset($input['email_verified']) ? (int)$input['email_verified'] : 0,
+        ':pwd' => $hash,
     ]);
 
     echo json_encode(['ok' => true, 'user_id' => (int)$pdo->lastInsertId()]);
