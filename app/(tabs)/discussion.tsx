@@ -127,7 +127,7 @@ export default function DiscussionPage() {
                             <TouchableOpacity
                                 style={styles.replyModalReplyBtn}
                                 onPress={() => {
-                                    // Add reply logic here
+                                    
                                     setReplyModalVisible(false);
                                     setReplyText('');
                                 }}

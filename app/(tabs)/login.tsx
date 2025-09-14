@@ -1,8 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { loginWithEmail } from '../../lib/api';
+import { Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -10,18 +9,8 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [remember, setRemember] = useState(false);
 
-    const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert('Missing info', 'Please enter email and password.');
-            return;
-        }
-        try {
-            await loginWithEmail({ email, password });
-            router.replace('/home');
-        } catch (e: any) {
-            const message = e?.message || 'Login failed';
-            Alert.alert('Invalid credentials', message);
-        }
+    const handleLogin = () => {
+        router.replace('/home'); // just go to home
     };
 
     const handleForgotPassword = () => {
@@ -51,7 +40,6 @@ export default function LoginPage() {
                 {/* Login Form */}
                 <View className="w-full max-w-sm mx-auto">
                     {/* Email Input */}
-                    {/* <Text className="text-gray-700 font-medium mb-1">Email</Text> */}
                     <TextInput
                         className="w-full h-12 border border-gray-300 rounded-lg px-4 mb-4"
                         placeholder="your-email@nu-dasma.edu.ph"

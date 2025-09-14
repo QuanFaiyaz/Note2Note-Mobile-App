@@ -1,176 +1,233 @@
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { registerUserWithEmail } from '../../lib/api';
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
-export default function CreateAccountPage() {
-    const router = useRouter();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+export default function CreateAccount() {
+  const router = useRouter();
+  const [role, setRole] = useState<"student" | "teacher" | null>(null);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    phone: "",
+    course: "",
+    email: "",
+    password: "",
+  });
 
-    const handleSignUp = async () => {
-        if (!email || !password || !confirmPassword) {
-            Alert.alert('Missing info', 'Please fill in all fields.');
-            return;
-        }
-        if (password !== confirmPassword) {
-            Alert.alert('Passwords do not match', 'Please make sure both passwords are the same.');
-            return;
-        }
-        try {
-            await registerUserWithEmail({ email, password });
-            Alert.alert('Success', 'Account created! You can now sign in.', [
-                { text: 'OK', onPress: () => router.replace('/login') }
-            ]);
-        } catch (e: any) {
-            const message = e?.message || 'Registration failed';
-            Alert.alert('Registration failed', message);
-        }
-    };
+  const handleChange = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value });
+  };
 
-    return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <View style={styles.logoRow}>
-                    <Image
-                        source={require('../../assets/images/n2nlogo.png')}
-                        style={styles.logoImage}
-                    />
-                    <Text style={styles.logoText}>Note2Note</Text>
-                </View>
-                <Text style={styles.title}>Welcome Aboard!</Text>
-                <Text style={styles.subtitle}>Let's get you set up in just minute</Text>
-                <Text style={styles.sectionTitle}>Sign up your account</Text>
-                <Text style={styles.sectionSubtitle}>Please enter info to create account</Text>
+  const handleSignUp = () => {
+    if (!role) {
+      alert("Please select a role");
+      return;
+    }
+    console.log("Signup data:", { ...formData, role });
+  };
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Email"
-                    placeholderTextColor="#9CA3AF"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    placeholderTextColor="#9CA3AF"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Confirm Password"
-                    placeholderTextColor="#9CA3AF"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry
-                />
+  return (
+    <View style={styles.container}>
+      {/* Blue Header with Back Button */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.replace("/login")}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
 
-                <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-                    <Text style={styles.buttonText}>Sign in to account</Text>
-                </TouchableOpacity>
+        {/* Centered Logo + Title */}
+        <View style={styles.headerCenter}>
+          <Image
+            source={require("../../assets/images/n2nlogo.png")} // 👈 your logo
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.headerTitle}>Create Account</Text>
+        </View>
+      </View>
 
-                <View style={{ flex: 1 }} />
-                <View style={styles.footer}>
-                    <Text style={styles.footerText}>
-                        Connect with your fellow NU-D BSIT students and share knowledge through our collaborative note-sharing platform
-                    </Text>
-                </View>
-            </ScrollView>
-        </SafeAreaView>
-    );
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Role Selector */}
+        <View style={styles.roleSelector}>
+          <TouchableOpacity
+            style={[styles.roleButton, role === "student" && styles.activeRole]}
+            onPress={() => setRole("student")}
+          >
+            <Ionicons
+              name="school-outline"
+              size={20}
+              color={role === "student" ? "#fff" : "#333"}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={[
+                styles.roleText,
+                role === "student" && styles.activeRoleText,
+              ]}
+            >
+              Student
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.roleButton, role === "teacher" && styles.activeRole]}
+            onPress={() => setRole("teacher")}
+          >
+            <Ionicons
+              name="person-outline"
+              size={20}
+              color={role === "teacher" ? "#fff" : "#333"}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={[
+                styles.roleText,
+                role === "teacher" && styles.activeRoleText,
+              ]}
+            >
+              Teacher
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Form Inputs */}
+        <TextInput
+          style={styles.input}
+          placeholder="First Name"
+          value={formData.firstName}
+          onChangeText={(val) => handleChange("firstName", val)}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Middle Name"
+          value={formData.middleName}
+          onChangeText={(val) => handleChange("middleName", val)}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Last Name"
+          value={formData.lastName}
+          onChangeText={(val) => handleChange("lastName", val)}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Phone"
+          keyboardType="phone-pad"
+          value={formData.phone}
+          onChangeText={(val) => handleChange("phone", val)}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Course"
+          value={formData.course}
+          onChangeText={(val) => handleChange("course", val)}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          keyboardType="email-address"
+          value={formData.email}
+          onChangeText={(val) => handleChange("email", val)}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          secureTextEntry
+          value={formData.password}
+          onChangeText={(val) => handleChange("password", val)}
+        />
+
+        {/* Sign Up Button */}
+        <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
+          <Text style={styles.signUpText}>Sign Up</Text>
+        </TouchableOpacity>
+
+        {/* Login Redirect */}
+        <TouchableOpacity onPress={() => router.push("/login")}>
+          <Text style={styles.loginText}>
+            Already have an account?{" "}
+            <Text style={{ fontWeight: "bold" }}>Sign in</Text>
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    scrollContainer: {
-        flexGrow: 1,
-        justifyContent: 'center',
-        paddingHorizontal: 32,
-        paddingVertical: 40,
-    },
-    logoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 32,
-    },
-    logoImage: {
-        width: 50,
-        height: 50,
-        resizeMode: 'contain',
-        marginRight: 8,
-    },
-    logoText: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#3B82F6',
-        textAlign: 'center',
-    },
-    title: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#111827',
-        textAlign: 'center',
-        marginBottom: 8,
-    },
-    subtitle: {
-        fontSize: 14,
-        color: '#6B7280',
-        textAlign: 'center',
-        marginBottom: 32,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#111827',
-        textAlign: 'center',
-        marginBottom: 8,
-        marginTop: 8,
-    },
-    sectionSubtitle: {
-        fontSize: 14,
-        color: '#6B7280',
-        textAlign: 'center',
-        marginBottom: 24,
-    },
-    input: {
-        width: '100%',
-        height: 48,
-        borderColor: '#D1D5DB',
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingHorizontal: 16,
-        marginBottom: 20,
-        fontSize: 16,
-        backgroundColor: '#F9FAFB',
-    },
-    button: {
-        backgroundColor: '#1E3A8A',
-        borderRadius: 8,
-        height: 48,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 16,
-        marginBottom: 40,
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    footer: {
-        backgroundColor: '#1E3A8A',
-        padding: 20,
-        borderRadius: 8,
-        marginTop: 40,
-    },
-    footerText: {
-        color: '#fff',
-        fontSize: 14,
-        textAlign: 'center',
-    },
+  container: { flex: 1, backgroundColor: "#fff" },
+  header: {
+    backgroundColor: "#1E3A8A",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+  },
+  backButton: { marginRight: 10 },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  logo: {
+    width: 120,
+    height: 40,
+    marginBottom: 5,
+  },
+  headerTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  scrollContainer: { paddingBottom: 30 },
+  roleSelector: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginVertical: 20,
+  },
+  roleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#aaa",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginHorizontal: 5,
+  },
+  activeRole: { backgroundColor: "#1E3A8A" },
+  roleText: { color: "#333", fontWeight: "bold" },
+  activeRoleText: { color: "#fff" },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: 20,   
+    marginBottom: 12,
+  },
+  signUpButton: {
+    backgroundColor: "#1E3A8A",
+    borderRadius: 8,
+    padding: 15,
+    margin: 20,
+  },
+  signUpText: {
+    color: "#fff",
+    fontSize: 16,
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  loginText: { textAlign: "center", color: "#555" },
 });

@@ -1,7 +1,8 @@
 import { Feather, FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
 
 // This is the main component for your home page, designed to match the provided image.
 export default function HomePage() {
@@ -47,29 +48,75 @@ export default function HomePage() {
         sharedBy: string;
     };
 
-    const NoteCard: React.FC<{ note: Note }> = ({ note }) => (
+    const NoteCard: React.FC<{ note: Note }> = ({ note }) => {
+    const [isLiked, setIsLiked] = useState(false);
+    const [isBookmarked, setIsBookmarked] = useState(false);
+
+    const handleLike = () => {
+        setIsLiked(!isLiked);
+    };
+
+    const handleBookmark = () => {
+        setIsBookmarked(!isBookmarked);
+    };
+
+    const handleComment = () => {
+        // Replace this with actual comment screen navigation later
+        Alert.alert("Comments", `Open comments for "${note.title}"`);
+    };
+
+    const handleShare = async () => {
+        try {
+            await Share.share({
+                message: `Check out this note: "${note.title}" shared by ${note.sharedBy}`,
+            });
+        } catch (error: any) {
+            Alert.alert("Error", error.message);
+        }
+    };
+
+    return (
         <View style={styles.noteCardContainer} key={note.id}>
             <View style={styles.noteCard}>
                 <Text style={styles.noteTitle}>{note.title}</Text>
                 <Text style={styles.noteSubject}>{note.subject}</Text>
                 <Text style={styles.noteSharedBy}>By {note.sharedBy}</Text>
+
+                {/* Icon row */}
                 <View style={styles.noteIconsRow}>
-                    <TouchableOpacity style={styles.iconButton}>
-                        <MaterialIcons name="favorite-border" size={16} color="#888" />
+                    {/* ❤️ Like */}
+                    <TouchableOpacity style={styles.iconButton} onPress={handleLike}>
+                        <MaterialIcons
+                            name={isLiked ? "favorite" : "favorite-border"}
+                            size={16}
+                            color={isLiked ? "red" : "#888"}
+                        />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
+
+                    {/* 💬 Comment */}
+                    <TouchableOpacity style={styles.iconButton} onPress={handleComment}>
                         <FontAwesome name="commenting-o" size={16} color="#888" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
+
+                    {/* 🔗 Share */}
+                    <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
                         <Feather name="share-2" size={16} color="#888" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
-                        <FontAwesome name="bookmark-o" size={16} color="#888" />
+
+                    {/* 🔖 Bookmark */}
+                    <TouchableOpacity style={styles.iconButton} onPress={handleBookmark}>
+                        <FontAwesome
+                            name={isBookmarked ? "bookmark" : "bookmark-o"}
+                            size={16}
+                            color={isBookmarked ? "#1E3A8A" : "#888"}
+                        />
                     </TouchableOpacity>
                 </View>
             </View>
         </View>
     );
+};
+
 
     // A mapping to get the correct icon for each subject
     const getSubjectIcon = (subjectName: string) => {
@@ -126,9 +173,12 @@ export default function HomePage() {
                         <TouchableOpacity onPress={handleAddNote} style={styles.addNoteButton}>
                             <Text style={styles.addNoteButtonText}>ADD NOTE</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => console.log('Upload a Note pressed')} style={styles.uploadNoteButton}>
-                            <Text style={styles.uploadNoteButtonText}>Upload a Note</Text>
-                        </TouchableOpacity>
+                        <TouchableOpacity 
+  onPress={() => router.push('/upload-note')} 
+  style={styles.uploadNoteButton}>
+    <Text style={styles.uploadNoteButtonText}>Upload a Note</Text>
+</TouchableOpacity>
+
                     </View>
                 </View>
 
@@ -178,7 +228,7 @@ export default function HomePage() {
                         <Text style={styles.bottomNavText}>Notes</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.bottomNavItem} onPress={() => router.replace('/my-files')}>
-    <FontAwesome5 name="files" size={22} color="#fff" />
+    <FontAwesome5 name="folder"yhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh size={22} color="#fff" />
     <Text style={styles.bottomNavText}>Files</Text>
 </TouchableOpacity>
 
