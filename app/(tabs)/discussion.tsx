@@ -142,7 +142,7 @@ export default function DiscussionPage() {
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.replace('/home')} style={{ position: 'absolute', left: 16, top: 40 }}>
-                    <Ionicons name="arrow-back" size={28} color="#fff" />
+                    <Ionicons name="arrow-back" size={40} color="#fff" />
                 </TouchableOpacity>
                 <View style={styles.logoRow}>
                     <Image

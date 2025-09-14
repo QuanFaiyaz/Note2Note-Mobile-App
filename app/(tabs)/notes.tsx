@@ -100,7 +100,7 @@ export default function NotesPage() {
                     onPress={() => router.replace('/home')} 
                     style={styles.backButton}
                 >
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
+                    <Ionicons name="arrow-back" size={40} color="#fff" />
                 </TouchableOpacity>
                 <View style={styles.headerContent}>
                     <MaterialIcons name="description" size={24} color="#fff" />

@@ -37,7 +37,7 @@ export default function MyFilesScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.replace('/home')}>
-            <Ionicons name="arrow-back" size={28} color="#fff" />
+            <Ionicons name="arrow-back" size={40} color="#fff" />
           </TouchableOpacity>
           <Ionicons name="document-text-outline" size={24} color="#fff" style={styles.headerIcon} />
           <Text style={styles.headerTitle}>My Files</Text>
