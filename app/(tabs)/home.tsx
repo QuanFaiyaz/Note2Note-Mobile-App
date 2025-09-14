@@ -228,14 +228,14 @@ export default function HomePage() {
                         <Text style={styles.bottomNavText}>Notes</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.bottomNavItem} onPress={() => router.replace('/my-files')}>
-    <FontAwesome5 name="folder"yhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh size={22} color="#fff" />
+    <FontAwesome5 name="folder" size={22} color="#fff" />
     <Text style={styles.bottomNavText}>Files</Text>
 </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.bottomNavItem}>
-                        <MaterialIcons name="person" size={24} color="#FFFFFF" />
-                        <Text style={styles.bottomNavText}>Profile</Text>
-                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.bottomNavItem} onPress={() => router.replace('/Profile')}>
+    <MaterialIcons name="person" size={24} color="#FFFFFF" />
+    <Text style={styles.bottomNavText}>Profile</Text>
+</TouchableOpacity>
                 </View>
             </SafeAreaView>
         </View>

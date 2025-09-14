@@ -243,10 +243,10 @@ export default function DiscussionPage() {
     <Text style={styles.bottomNavText}>Files</Text>
 </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.bottomNavItem}>
-                        <MaterialIcons name="person" size={24} color="#fff" />
-                        <Text style={styles.bottomNavText}>Profile</Text>
-                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.bottomNavItem} onPress={() => router.replace('/Profile')}>
+    <MaterialIcons name="person" size={24} color="#fff" />
+    <Text style={styles.bottomNavText}>Profile</Text>
+</TouchableOpacity>
                 </View>
             </SafeAreaView>
         </SafeAreaView>
