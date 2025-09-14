@@ -1,5 +1,3 @@
-
-
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../config.php';
@@ -56,5 +54,3 @@ try {
     http_response_code(400);
     echo json_encode(['error' => 'Insert failed', 'detail' => $e->getMessage()]);
 }
-
-

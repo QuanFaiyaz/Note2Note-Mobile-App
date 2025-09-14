@@ -1,6 +1,8 @@
 // Minimal client for the PHP API
 
-const BASE_URL = 'http://localhost/note2note-api';
+// Use your computer's IP address instead of localhost for mobile/emulator access
+// PHP files are now copied to C:\xampp\htdocs\note2note
+const BASE_URL = 'http://192.168.1.2/note2note';
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -51,9 +53,17 @@ export async function deleteNote(noteId: number) {
   );
 }
 
-export async function registerUserWithEmail(payload: { email: string; password: string }) {
+export async function registerUser(payload: {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  mobileNo?: string;
+  course?: string;
+}) {
   return handleResponse<{ ok: boolean; user_id: number }>(
-    await fetch(`${BASE_URL}/users/register.php`, {
+    await fetch(`${BASE_URL}/users/registration.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -71,8 +81,19 @@ export async function loginWithEmail(payload: { email: string; password: string 
   );
 }
 
-export async function listSubjects() {
-  return handleResponse<{ data: any[] }>(await fetch(`${BASE_URL}/subjects/list.php`));
+export async function listSubjects(courseId?: number) {
+  const q = courseId && courseId > 0 ? `?course_id=${courseId}` : '';
+  return handleResponse<{ data: any[] }>(await fetch(`${BASE_URL}/subjects/list.php${q}`));
+}
+
+export async function listCourses() {
+  return handleResponse<{ data: any[] }>(await fetch(`${BASE_URL}/courses/list.php`));
+}
+
+export async function testConnection() {
+  return handleResponse<{ ok: boolean; message: string; timestamp: string; server_ip: string }>(
+    await fetch(`${BASE_URL}/test-connection.php`)
+  );
 }
 
 export async function toggleBookmark(user_id: number, NoteId: number) {
