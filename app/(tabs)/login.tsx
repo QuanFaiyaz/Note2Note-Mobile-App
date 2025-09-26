@@ -1,16 +1,61 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { loginWithEmail } from '../lib/api';
 
 export default function LoginPage() {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [remember, setRemember] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = () => {
-        router.replace('/home'); // just go to home
+    const validateForm = () => {
+        if (!email.trim()) {
+            Alert.alert('Error', 'Please enter your email address');
+            return false;
+        }
+        if (!password.trim()) {
+            Alert.alert('Error', 'Please enter your password');
+            return false;
+        }
+        if (!email.includes('@')) {
+            Alert.alert('Error', 'Please enter a valid email address');
+            return false;
+        }
+        return true;
+    };
+
+    const handleLogin = async () => {
+        if (!validateForm()) return;
+
+        setIsLoading(true);
+        try {
+            console.log('Attempting login with:', { email: email.trim(), password });
+            const response = await loginWithEmail({
+                email: email.trim(),
+                password: password
+            });
+            
+            console.log('Login successful:', response);
+            
+            Alert.alert(
+                'Success',
+                'Login successful! Welcome back.',
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => router.replace('/home')
+                    }
+                ]
+            );
+        } catch (error: any) {
+            console.error('Login error:', error);
+            Alert.alert('Error', error.message || 'Login failed. Please check your credentials and try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleForgotPassword = () => {
@@ -82,9 +127,14 @@ export default function LoginPage() {
                     {/* Sign In Button */}
                     <TouchableOpacity
                         onPress={handleLogin}
-                        className="w-full bg-blue-900 rounded-lg h-12 items-center justify-center mb-6"
+                        disabled={isLoading}
+                        className={`w-full rounded-lg h-12 items-center justify-center mb-6 ${isLoading ? 'bg-gray-400' : 'bg-blue-900'}`}
                     >
-                        <Text className="text-white text-base font-semibold">Sign in</Text>
+                        {isLoading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text className="text-white text-base font-semibold">Sign in</Text>
+                        )}
                     </TouchableOpacity>
 
                     {/* Create Account */}

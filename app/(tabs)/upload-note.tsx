@@ -2,13 +2,85 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker'; // ✅ Import DocumentPicker
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { createNote, listSubjects } from '../lib/api';
 
 export default function UploadNotePage() {
   const router = useRouter();
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
   const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [tags, setTags] = useState('');
+
+  React.useEffect(() => {
+    loadSubjects();
+  }, []);
+
+  const loadSubjects = async () => {
+    try {
+      const response = await listSubjects();
+      setSubjects(response.data || []);
+    } catch (error) {
+      console.error('Failed to load subjects:', error);
+    }
+  };
+
+  const validateForm = () => {
+    if (!noteTitle.trim()) {
+      Alert.alert('Error', 'Please enter a note title');
+      return false;
+    }
+    if (!noteContent.trim()) {
+      Alert.alert('Error', 'Please enter note content');
+      return false;
+    }
+    return true;
+  };
+
+  const handleUploadNote = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    try {
+      // For now, we'll use a default user_id and subject_id
+      // In a real app, you'd get these from the logged-in user context
+      const noteData = {
+        user_id: 1, // TODO: Get from logged-in user
+        title: noteTitle.trim(),
+        content: noteContent.trim(),
+        subject_id: 1, // TODO: Get from selected subject
+        file_path: selectedFile?.uri || null,
+        file_type: selectedFile?.mimeType || null,
+        file_size: selectedFile?.size || null,
+        is_public: true, // Make notes public by default
+        is_featured: false,
+        tags: tags.trim() || null,
+      };
+
+      console.log('Creating note with data:', noteData);
+      const response = await createNote(noteData);
+      console.log('Note created successfully:', response);
+
+      Alert.alert(
+        'Success!',
+        'Note uploaded successfully! You earned 10 points.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/notes')
+          }
+        ]
+      );
+    } catch (error: any) {
+      console.error('Failed to upload note:', error);
+      Alert.alert('Error', error.message || 'Failed to upload note. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // 📂 File Picker function
   const pickFile = async () => {
@@ -87,7 +159,7 @@ export default function UploadNotePage() {
 
         {/* Note Content */}
         <View style={styles.sectionBox}>
-          <Text style={styles.label}>Note Content</Text>
+          <Text style={styles.label}>Note Content*</Text>
           <TextInput
             style={[styles.input, { height: 100 }]}
             placeholder="Type your note content here..."
@@ -97,16 +169,43 @@ export default function UploadNotePage() {
           />
         </View>
 
+        {/* Subject Selection */}
+        <View style={styles.sectionBox}>
+          <Text style={styles.label}>Subject (Optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter subject or leave blank for general"
+            value={selectedSubject}
+            onChangeText={setSelectedSubject}
+          />
+        </View>
+
+        {/* Tags */}
+        <View style={styles.sectionBox}>
+          <Text style={styles.label}>Tags (Optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter tags separated by commas (e.g., math, algebra, equations)"
+            value={tags}
+            onChangeText={setTags}
+          />
+        </View>
+
         {/* Buttons */}
         <View style={styles.buttonRow}>
           <TouchableOpacity style={styles.cancelBtn} onPress={() => router.replace('/home')}>
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={styles.uploadBtn}
-            onPress={() => console.log("Uploading note:", { noteTitle, noteContent, selectedFile })}
+            style={[styles.uploadBtn, isLoading && styles.disabledBtn]}
+            onPress={handleUploadNote}
+            disabled={isLoading}
           >
-            <Text style={styles.uploadText}>Upload Note +10</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.uploadText}>Upload Note +10</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -148,5 +247,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#1E3A8A',
     fontStyle: 'italic',
+  },
+  disabledBtn: {
+    backgroundColor: '#ccc',
   },
 });

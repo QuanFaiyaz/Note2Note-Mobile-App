@@ -1,93 +1,47 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { listNotes } from '../lib/api';
 
 export default function NotesPage() {
     const router = useRouter();
+    const [notes, setNotes] = React.useState<any[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
 
-    const notes = [
-        {
-            id: 1,
-            title: 'Multimedia',
-            category: 'Computer Science',
-            author: 'By Juan dela',
-            status: 'Verified',
-            isVerified: true,
-            rating: 4.9,
-            reviewCount: 7,
-            dateCreated: 'Oct 25, 2024',
-            content: {
-                summary: 'Multimedia - Summary',
-                description: 'A comprehensive guide covering multimedia concepts, digital media types, compression techniques, and interactive media development.',
-                keyPoints: [
-                    'Digital media formats and standards',
-                    'Audio and video processing techniques',
-                    'Interactive multimedia applications',
-                    'Web-based multimedia integration'
-                ]
-            }
-        },
-        {
-            id: 2,
-            title: 'Data Structure',
-            category: 'Computer Science',
-            author: 'By Juan dela',
-            status: 'Verified',
-            isVerified: true,
-            rating: 4.8,
-            reviewCount: 12,
-            dateCreated: 'Oct 20, 2024',
-            content: {
-                summary: 'Data Structures - Binary Trees',
-                description: 'A binary tree is a hierarchical data structure where each node has at most two children: left and right.',
-                keyPoints: [
-                    'Structure: Each node holds data plus pointers to children; root is the top node; leaf nodes have no children; height is the longest root-to-leaf path.',
-                    'Types: Full: Every node has 0 or 2 children. Complete: All levels filled except possibly the last. Perfect: All internal nodes have 2 children and leaves are at the same level.',
-                    'Operations: Insertion, Deletion, Traversal (In-order, Pre-order, Post-order)',
-                    'Applications: Expression trees, Binary Search Trees (BST), heaps, file directories, decision trees.'
-                ]
-            }
-        },
-        {
-            id: 3,
-            title: 'Discrete',
-            category: 'Computer Science',
-            author: 'By Juan dela',
-            status: 'Verified',
-            isVerified: true,
-            rating: 4.7,
-            reviewCount: 9,
-            dateCreated: 'Oct 15, 2024',
-            content: {
-                summary: 'Discrete Mathematics - Summary',
-                description: 'Fundamental concepts in discrete mathematics including set theory, logic, combinatorics, and graph theory.',
-                keyPoints: [
-                    'Set theory and operations',
-                    'Propositional and predicate logic',
-                    'Combinatorics and counting principles',
-                    'Graph theory and algorithms'
-                ]
-            }
-        },
-    ];
+    React.useEffect(() => {
+        loadNotes();
+    }, []);
+
+    const loadNotes = async () => {
+        try {
+            setIsLoading(true);
+            const response = await listNotes(); // Get all public notes
+            setNotes(response.data || []);
+        } catch (error) {
+            console.error('Failed to load notes:', error);
+            Alert.alert('Error', 'Failed to load notes. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleNotePress = (note: any) => {
         // Navigate to note details page with the note data
         router.push({
             pathname: '/note-details',
             params: {
-                noteId: note.id.toString(),
+                noteId: note.note_id.toString(),
                 title: note.title,
-                category: note.category,
-                author: note.author,
-                status: note.status,
-                rating: note.rating.toString(),
-                reviewCount: note.reviewCount.toString(),
-                dateCreated: note.dateCreated,
-                summary: note.content.summary,
-                description: note.content.description,
-                keyPoints: JSON.stringify(note.content.keyPoints)
+                category: note.subject_name || note.course_name || 'General',
+                author: `By ${note.FirstName} ${note.LastName}`,
+                status: note.is_featured ? 'Featured' : 'Public',
+                rating: (note.rating || 0).toString(),
+                reviewCount: (note.download_count || 0).toString(),
+                dateCreated: new Date(note.created_at).toLocaleDateString(),
+                summary: note.title,
+                description: note.content,
+                keyPoints: JSON.stringify([note.content])
             }
         });
     };
@@ -112,56 +66,75 @@ export default function NotesPage() {
                 {/* Main Title */}
                 <Text style={styles.mainTitle}>Notes</Text>
 
-                {/* Notes List */}
-                <View style={styles.notesContainer}>
-                    {notes.map((note, index) => (
-                        <TouchableOpacity 
-                            key={`note-${note.id}`} 
-                            style={styles.noteCard}
-                            onPress={() => handleNotePress(note)}
-                            activeOpacity={0.7}
-                        >
-                            {/* Note Header with Action Icons */}
-                            <View style={styles.noteHeader}>
-                                <View style={styles.noteInfo}>
-                                    <Text style={styles.noteTitle}>{note.title}</Text>
-                                    <Text style={styles.noteCategory}>{note.category}</Text>
-                                    <Text style={styles.noteAuthor}>{note.author}</Text>
-                                </View>
-                                <View style={styles.noteActions}>
-                                    <TouchableOpacity 
-                                        style={styles.menuButton}
-                                        onPress={(e) => {
-                                            e.stopPropagation();
-                                            // Handle menu action
-                                            console.log('Menu pressed for note:', note.id);
-                                        }}
-                                    >
-                                        <MaterialIcons name="more-vert" size={20} color="#666" />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity 
-                                        style={styles.deleteButton}
-                                        onPress={(e) => {
-                                            e.stopPropagation();
-                                            // Handle delete action
-                                            console.log('Delete pressed for note:', note.id);
-                                        }}
-                                    >
-                                        <MaterialIcons name="close" size={20} color="#ff4444" />
-                                    </TouchableOpacity>
-                                </View>
+                {/* Loading State */}
+                {isLoading ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color="#fff" />
+                        <Text style={styles.loadingText}>Loading notes...</Text>
+                    </View>
+                ) : (
+                    /* Notes List */
+                    <View style={styles.notesContainer}>
+                        {notes.length === 0 ? (
+                            <View style={styles.emptyContainer}>
+                                <MaterialIcons name="description" size={64} color="#ccc" />
+                                <Text style={styles.emptyText}>No notes available</Text>
+                                <Text style={styles.emptySubtext}>Be the first to upload a note!</Text>
                             </View>
+                        ) : (
+                            notes.map((note, index) => (
+                                <TouchableOpacity 
+                                    key={`note-${note.note_id}`} 
+                                    style={styles.noteCard}
+                                    onPress={() => handleNotePress(note)}
+                                    activeOpacity={0.7}
+                                >
+                                    {/* Note Header with Action Icons */}
+                                    <View style={styles.noteHeader}>
+                                        <View style={styles.noteInfo}>
+                                            <Text style={styles.noteTitle}>{note.title}</Text>
+                                            <Text style={styles.noteCategory}>
+                                                {note.subject_name || note.course_name || 'General'}
+                                            </Text>
+                                            <Text style={styles.noteAuthor}>
+                                                By {note.FirstName} {note.LastName}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.noteActions}>
+                                            <TouchableOpacity 
+                                                style={styles.menuButton}
+                                                onPress={(e) => {
+                                                    e.stopPropagation();
+                                                    // Handle menu action
+                                                    console.log('Menu pressed for note:', note.note_id);
+                                                }}
+                                            >
+                                                <MaterialIcons name="more-vert" size={20} color="#666" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
 
-                            {/* Status Tag */}
-                            <View style={styles.statusContainer}>
-                                <View style={styles.verifiedTag}>
-                                    <MaterialIcons name="check-circle" size={16} color="#4CAF50" />
-                                    <Text style={styles.verifiedText}>{note.status}</Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                                    {/* Status Tag */}
+                                    <View style={styles.statusContainer}>
+                                        <View style={styles.verifiedTag}>
+                                            <MaterialIcons 
+                                                name={note.is_featured ? "star" : "check-circle"} 
+                                                size={16} 
+                                                color={note.is_featured ? "#FFD700" : "#4CAF50"} 
+                                            />
+                                            <Text style={styles.verifiedText}>
+                                                {note.is_featured ? 'Featured' : 'Public'}
+                                            </Text>
+                                        </View>
+                                        <Text style={styles.dateText}>
+                                            {new Date(note.created_at).toLocaleDateString()}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))
+                        )}
+                    </View>
+                )}
             </ScrollView>
 
             {/* Bottom Navigation */}
@@ -320,5 +293,38 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 4,
         fontFamily: 'sans-serif',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 50,
+    },
+    loadingText: {
+        color: '#fff',
+        fontSize: 16,
+        marginTop: 16,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 50,
+    },
+    emptyText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginTop: 16,
+    },
+    emptySubtext: {
+        color: '#ccc',
+        fontSize: 14,
+        marginTop: 8,
+    },
+    dateText: {
+        color: '#666',
+        fontSize: 12,
+        marginLeft: 8,
     },
 });

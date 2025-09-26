@@ -23,13 +23,21 @@ if (isset($input['email']) && isset($input['password'])) {
         'Password' => (string)$input['password'],
         'Account_Type' => 'Student',
         'is_Admin' => 0,
-        'status' => 'Pending',
-        'email_verified' => 0,
+        'status' => 'Active',
+        'email_verified' => 1,
+        'otp_verified' => $input['otp_verified'] ?? false, // Preserve the otp_verified flag
     ];
 }
 
 // Only require the fields that actually exist
 require_fields($input, ['Email','Password','FirstName','LastName']);
+
+// Check if OTP was verified
+if (!isset($input['otp_verified']) || !$input['otp_verified'] || $input['otp_verified'] === 'false' || $input['otp_verified'] === 0) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Email must be verified with OTP first']);
+    exit;
+}
 
 try {
     $hash = password_hash((string)$input['Password'], PASSWORD_BCRYPT);

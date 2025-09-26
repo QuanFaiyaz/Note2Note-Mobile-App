@@ -1,96 +1,85 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { listCourses, registerUser, testConnection } from "../lib/api";
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { listCourses, registerUser } from "../lib/api";
+import OTPVerification from "./otp-verification";
 
 export default function CreateAccount() {
   const router = useRouter();
-  const [role, setRole] = useState<"student" | "teacher" | null>(null);
+  const [role, setRole] = useState("Student");
   const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showOTPVerification, setShowOTPVerification] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: "",
-    middleName: "",
-    lastName: "",
-    phone: "",
-    course: "",
     email: "",
     password: "",
+    confirmPassword: "",
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    phone: "",
+    course: "",
   });
 
-  // Load courses on component mount
   useEffect(() => {
-    const loadCourses = async () => {
-      try {
-        // Test connection first
-        console.log("Testing API connection...");
-        const connectionTest = await testConnection();
-        console.log("Connection test result:", connectionTest);
-        
-        // Load courses
-        const response = await listCourses();
-        setCourses(response.data);
-        console.log("Courses loaded successfully:", response.data.length);
-      } catch (error) {
-        console.error("Failed to load courses:", error);
-        Alert.alert(
-          "Connection Error", 
-          "Unable to connect to the server. Please check:\n\n1. XAMPP is running\n2. Your device is on the same network\n3. Firewall allows connections\n\nError: " + (error as Error).message
-        );
-      }
-    };
     loadCourses();
   }, []);
 
-  const handleChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value });
+  const loadCourses = async () => {
+    try {
+      const response = await listCourses();
+      setCourses(response.data || []);
+    } catch (error) {
+      console.error("Failed to load courses:", error);
+    }
   };
 
   const validateForm = () => {
-    if (!role) {
-      Alert.alert("Error", "Please select a role");
-      return false;
-    }
-    if (!formData.firstName.trim()) {
-      Alert.alert("Error", "First name is required");
-      return false;
-    }
-    if (!formData.lastName.trim()) {
-      Alert.alert("Error", "Last name is required");
-      return false;
-    }
     if (!formData.email.trim()) {
-      Alert.alert("Error", "Email is required");
+      Alert.alert("Error", "Please enter your email address");
       return false;
     }
     if (!formData.password.trim()) {
-      Alert.alert("Error", "Password is required");
+      Alert.alert("Error", "Please enter your password");
       return false;
     }
-    if (formData.password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters");
+    if (formData.password !== formData.confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return false;
+    }
+    if (!formData.firstName.trim()) {
+      Alert.alert("Error", "Please enter your first name");
+      return false;
+    }
+    if (!formData.lastName.trim()) {
+      Alert.alert("Error", "Please enter your last name");
+      return false;
+    }
+    if (!formData.email.includes("@")) {
+      Alert.alert("Error", "Please enter a valid email address");
       return false;
     }
     return true;
   };
 
   const handleSignUp = async () => {
+    console.log("handleSignUp called, isEmailVerified:", isEmailVerified);
     if (!validateForm()) return;
 
+    // If email is not verified, show OTP verification
+    if (!isEmailVerified) {
+      console.log("Email not verified, showing OTP verification");
+      setShowOTPVerification(true);
+      return;
+    }
+
+    // Proceed with registration if email is verified
+    console.log("Email verified, proceeding with registration...");
     setIsLoading(true);
     try {
-      const response = await registerUser({
+      const registrationData = {
         email: formData.email.trim(),
         password: formData.password,
         firstName: formData.firstName.trim(),
@@ -98,11 +87,16 @@ export default function CreateAccount() {
         middleName: formData.middleName.trim() || undefined,
         mobileNo: formData.phone.trim() || undefined,
         course: formData.course.trim() || undefined,
-      });
+        otp_verified: true,
+      };
+      console.log("Registration data:", registrationData);
+      
+      const response = await registerUser(registrationData);
+      console.log("Registration response:", response);
 
       Alert.alert(
         "Success", 
-        "Account created successfully! Please check your email for verification.",
+        "Account created successfully! You can now log in.",
         [
           {
             text: "OK",
@@ -118,65 +112,139 @@ export default function CreateAccount() {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Blue Header with Back Button */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.replace("/login")}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={40} color="#fff" />
-        </TouchableOpacity>
+  const handleOTPVerificationSuccess = () => {
+    console.log("OTP verification successful, proceeding with account creation...");
+    setIsEmailVerified(true);
+    setShowOTPVerification(false);
+    // Automatically proceed with registration
+    handleSignUp();
+  };
 
-        {/* Centered Logo + Title */}
-        <View style={styles.headerCenter}>
-          <Image
-            source={require("../../assets/images/n2nlogo.png")} // 👈 your logo
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.headerTitle}>Create Account</Text>
-        </View>
+  const handleOTPBack = () => {
+    setShowOTPVerification(false);
+    setIsEmailVerified(false);
+  };
+
+  if (showOTPVerification) {
+    return (
+      <OTPVerification
+        email={formData.email.trim()}
+        onVerificationSuccess={handleOTPVerificationSuccess}
+        onBack={handleOTPBack}
+      />
+    );
+  }
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Image
+          source={require("../../assets/images/n2nlogo.png")}
+          style={styles.logo}
+        />
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>Join Note2Note today</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Role Selector */}
-        <View style={styles.roleSelector}>
+      <View style={styles.form}>
+        {/* Email Input */}
+        <Text style={styles.label}>Email Address</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="your-email@nu-dasma.edu.ph"
+          value={formData.email}
+          onChangeText={(text) => setFormData({ ...formData, email: text })}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+
+        {/* Password Input */}
+        <Text style={styles.label}>Password</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your password"
+          value={formData.password}
+          onChangeText={(text) => setFormData({ ...formData, password: text })}
+          secureTextEntry
+        />
+
+        {/* Confirm Password Input */}
+        <Text style={styles.label}>Confirm Password</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Confirm your password"
+          value={formData.confirmPassword}
+          onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
+          secureTextEntry
+        />
+
+        {/* First Name Input */}
+        <Text style={styles.label}>First Name</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your first name"
+          value={formData.firstName}
+          onChangeText={(text) => setFormData({ ...formData, firstName: text })}
+        />
+
+        {/* Last Name Input */}
+        <Text style={styles.label}>Last Name</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your last name"
+          value={formData.lastName}
+          onChangeText={(text) => setFormData({ ...formData, lastName: text })}
+        />
+
+        {/* Middle Name Input */}
+        <Text style={styles.label}>Middle Name (Optional)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your middle name"
+          value={formData.middleName}
+          onChangeText={(text) => setFormData({ ...formData, middleName: text })}
+        />
+
+        {/* Phone Input */}
+        <Text style={styles.label}>Phone Number (Optional)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your phone number"
+          value={formData.phone}
+          onChangeText={(text) => setFormData({ ...formData, phone: text })}
+          keyboardType="phone-pad"
+        />
+
+        {/* Role Selection */}
+        <Text style={styles.label}>Account Type</Text>
+        <View style={styles.roleContainer}>
           <TouchableOpacity
-            style={[styles.roleButton, role === "student" && styles.activeRole]}
-            onPress={() => setRole("student")}
+            style={[
+              styles.roleButton,
+              role === "Student" && styles.roleButtonActive,
+            ]}
+            onPress={() => setRole("Student")}
           >
-            <Ionicons
-              name="school-outline"
-              size={20}
-              color={role === "student" ? "#fff" : "#333"}
-              style={{ marginRight: 6 }}
-            />
             <Text
               style={[
-                styles.roleText,
-                role === "student" && styles.activeRoleText,
+                styles.roleButtonText,
+                role === "Student" && styles.roleButtonTextActive,
               ]}
             >
               Student
             </Text>
           </TouchableOpacity>
-
           <TouchableOpacity
-            style={[styles.roleButton, role === "teacher" && styles.activeRole]}
-            onPress={() => setRole("teacher")}
+            style={[
+              styles.roleButton,
+              role === "Teacher" && styles.roleButtonActive,
+            ]}
+            onPress={() => setRole("Teacher")}
           >
-            <Ionicons
-              name="person-outline"
-              size={20}
-              color={role === "teacher" ? "#fff" : "#333"}
-              style={{ marginRight: 6 }}
-            />
             <Text
               style={[
-                styles.roleText,
-                role === "teacher" && styles.activeRoleText,
+                styles.roleButtonText,
+                role === "Teacher" && styles.roleButtonTextActive,
               ]}
             >
               Teacher
@@ -184,192 +252,159 @@ export default function CreateAccount() {
           </TouchableOpacity>
         </View>
 
-        {/* Form Inputs */}
-        <TextInput
-          style={styles.input}
-          placeholder="First Name"
-          value={formData.firstName}
-          onChangeText={(val) => handleChange("firstName", val)}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Middle Name"
-          value={formData.middleName}
-          onChangeText={(val) => handleChange("middleName", val)}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Last Name"
-          value={formData.lastName}
-          onChangeText={(val) => handleChange("lastName", val)}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Phone"
-          keyboardType="phone-pad"
-          value={formData.phone}
-          onChangeText={(val) => handleChange("phone", val)}
-        />
-        {/* Course Dropdown */}
+        {/* Course Selection */}
+        <Text style={styles.label}>Course (Optional)</Text>
         <View style={styles.dropdownContainer}>
-          <Text style={styles.dropdownLabel}>Course (Optional)</Text>
-          <ScrollView style={styles.dropdown} nestedScrollEnabled>
-            {courses.map((course) => (
-              <TouchableOpacity
-                key={course.course_id}
-                style={[
-                  styles.dropdownItem,
-                  formData.course === course.course_name && styles.selectedDropdownItem
-                ]}
-                onPress={() => handleChange("course", course.course_name)}
-              >
-                <Text style={[
-                  styles.dropdownItemText,
-                  formData.course === course.course_name && styles.selectedDropdownItemText
-                ]}>
-                  {course.course_name} ({course.course_code})
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          <TextInput
+            style={styles.dropdown}
+            placeholder="Select your course"
+            value={formData.course}
+            onChangeText={(text) => setFormData({ ...formData, course: text })}
+          />
+          <TouchableOpacity style={styles.dropdownIcon}>
+            <Ionicons name="chevron-down" size={20} color="#666" />
+          </TouchableOpacity>
         </View>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          keyboardType="email-address"
-          value={formData.email}
-          onChangeText={(val) => handleChange("email", val)}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          secureTextEntry
-          value={formData.password}
-          onChangeText={(val) => handleChange("password", val)}
-        />
 
         {/* Sign Up Button */}
-        <TouchableOpacity 
-          style={[styles.signUpButton, isLoading && styles.disabledButton]} 
+        <TouchableOpacity
+          style={[styles.signUpButton, isLoading && styles.disabledButton]}
           onPress={handleSignUp}
           disabled={isLoading}
         >
           {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.signUpText}>Sign Up</Text>
+            <Text style={styles.signUpText}>
+              {isEmailVerified ? "Create Account" : "Verify Email & Sign Up"}
+            </Text>
           )}
         </TouchableOpacity>
 
-        {/* Login Redirect */}
-        <TouchableOpacity onPress={() => router.push("/login")}>
+        {/* Login Link */}
+        <TouchableOpacity
+          style={styles.loginLink}
+          onPress={() => router.push("/login")}
+        >
           <Text style={styles.loginText}>
-            Already have an account?{" "}
-            <Text style={{ fontWeight: "bold" }}>Sign in</Text>
+            Already have an account? Sign in
           </Text>
         </TouchableOpacity>
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  header: {
-    backgroundColor: "#1E3A8A",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-  },
-  backButton: { marginRight: 10 },
-  headerCenter: {
+  container: {
     flex: 1,
+    backgroundColor: "#fff",
+  },
+  header: {
     alignItems: "center",
+    paddingTop: 60,
+    paddingBottom: 30,
   },
   logo: {
-    width: 120,
-    height: 40,
-    marginBottom: 5,
+    width: 80,
+    height: 80,
+    marginBottom: 20,
   },
-  headerTitle: {
-    color: "#fff",
-    fontSize: 16,
+  title: {
+    fontSize: 28,
     fontWeight: "bold",
+    color: "#1E3A8A",
+    marginBottom: 8,
   },
-  scrollContainer: { paddingBottom: 30 },
-  roleSelector: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginVertical: 20,
+  subtitle: {
+    fontSize: 16,
+    color: "#666",
   },
-  roleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#aaa",
-    borderRadius: 8,
-    paddingVertical: 10,
+  form: {
     paddingHorizontal: 20,
-    marginHorizontal: 5,
+    paddingBottom: 30,
   },
-  activeRole: { backgroundColor: "#1E3A8A" },
-  roleText: { color: "#333", fontWeight: "bold" },
-  activeRoleText: { color: "#fff" },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 8,
+    marginTop: 16,
+  },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#ddd",
     borderRadius: 8,
-    padding: 12,
-    marginHorizontal: 20,   
-    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: "#fff",
+  },
+  roleContainer: {
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  roleButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    marginRight: 8,
+    alignItems: "center",
+  },
+  roleButtonActive: {
+    backgroundColor: "#1E3A8A",
+    borderColor: "#1E3A8A",
+  },
+  roleButtonText: {
+    fontSize: 16,
+    color: "#666",
+  },
+  roleButtonTextActive: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  dropdownContainer: {
+    position: "relative",
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: "#fff",
+    paddingRight: 50,
+  },
+  dropdownIcon: {
+    position: "absolute",
+    right: 16,
+    top: 12,
   },
   signUpButton: {
     backgroundColor: "#1E3A8A",
     borderRadius: 8,
-    padding: 15,
-    margin: 20,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 24,
   },
   disabledButton: {
     backgroundColor: "#ccc",
   },
   signUpText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  loginLink: {
+    alignItems: "center",
+    marginTop: 20,
+  },
+  loginText: {
     textAlign: "center",
-    fontWeight: "bold",
-  },
-  loginText: { textAlign: "center", color: "#555" },
-  dropdownContainer: {
-    marginHorizontal: 20,
-    marginBottom: 12,
-  },
-  dropdownLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 8,
-  },
-  dropdown: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    maxHeight: 120,
-    backgroundColor: "#fff",
-  },
-  dropdownItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  selectedDropdownItem: {
-    backgroundColor: "#1E3A8A",
-  },
-  dropdownItemText: {
-    fontSize: 14,
-    color: "#333",
-  },
-  selectedDropdownItemText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: "#555",
   },
 });

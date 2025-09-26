@@ -1,6 +1,3 @@
-
-
-
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../config.php';
@@ -41,5 +38,4 @@ $updateStmt->execute([':user_id' => $user['user_id']]);
 
 unset($user['Password']);
 echo json_encode(['ok' => true, 'user' => $user]);
-
-
+?>

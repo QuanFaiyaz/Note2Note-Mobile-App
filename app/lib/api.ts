@@ -2,7 +2,7 @@
 
 // Use your computer's IP address instead of localhost for mobile/emulator access
 // PHP files are now copied to C:\xampp\htdocs\note2note
-const BASE_URL = 'http://192.168.1.2/note2note';
+const BASE_URL = 'http://192.168.1.7/note2note';
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -20,11 +20,17 @@ export async function listNotes(userId?: number) {
 
 export async function createNote(payload: {
   user_id: number;
-  Title: string;
-  Description: string;
-  SubjectId: number;
+  title: string;
+  content: string;
+  subject_id: number;
+  file_path?: string;
+  file_type?: string;
+  file_size?: number;
+  is_public?: boolean;
+  is_featured?: boolean;
+  tags?: string;
 }) {
-  return handleResponse<{ ok: boolean; NoteId: number }>(
+  return handleResponse<{ ok: boolean; note_id: number }>(
     await fetch(`${BASE_URL}/notes/create.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -33,7 +39,7 @@ export async function createNote(payload: {
   );
 }
 
-export async function updateNote(payload: Partial<{ Title: string; Description: string; SubjectId: number }> & { NoteId: number }) {
+export async function updateNote(payload: Partial<{ title: string; content: string; subject_id: number; file_path?: string; file_type?: string; file_size?: number; is_public?: boolean; is_featured?: boolean; tags?: string }> & { note_id: number }) {
   return handleResponse<{ ok: boolean }>(
     await fetch(`${BASE_URL}/notes/update.php`, {
       method: 'PUT',
@@ -48,7 +54,7 @@ export async function deleteNote(noteId: number) {
     await fetch(`${BASE_URL}/notes/delete.php`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ NoteId: noteId }),
+      body: JSON.stringify({ note_id: noteId }),
     })
   );
 }
@@ -61,6 +67,7 @@ export async function registerUser(payload: {
   middleName?: string;
   mobileNo?: string;
   course?: string;
+  otp_verified: boolean;
 }) {
   return handleResponse<{ ok: boolean; user_id: number }>(
     await fetch(`${BASE_URL}/users/registration.php`, {
@@ -93,6 +100,81 @@ export async function listCourses() {
 export async function testConnection() {
   return handleResponse<{ ok: boolean; message: string; timestamp: string; server_ip: string }>(
     await fetch(`${BASE_URL}/test-connection.php`)
+  );
+}
+
+export async function sendOTP(email: string) {
+  // Generate OTP locally
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  // Send OTP via EmailJS (try multiple methods)
+  const { EmailJSService } = await import('./emailjs-service');
+  const { EmailJSRestService } = await import('./emailjs-rest');
+  const { EmailJSSimpleService } = await import('./emailjs-simple');
+  
+  const emailData = {
+    email: email,
+    otp_code: otp,
+    app_name: 'Note2Note',
+    expiry_minutes: 10,
+  };
+
+  let emailSent = await EmailJSService.sendOTPEmail(emailData);
+  
+  if (!emailSent) {
+    console.log('SDK failed, trying REST API...');
+    emailSent = await EmailJSRestService.sendOTPEmail(emailData);
+  }
+  
+  if (!emailSent) {
+    console.log('REST API failed, trying Simple API...');
+    emailSent = await EmailJSSimpleService.sendOTPEmail(emailData);
+  }
+  
+  if (!emailSent) {
+    console.log('Simple API failed, trying FormData API...');
+    emailSent = await EmailJSSimpleService.sendOTPEmailFormData(emailData);
+  }
+  
+  if (!emailSent) {
+    console.log('EmailJS failed, trying secure PHP EmailJS...');
+    const { EmailJSSecureService } = await import('./emailjs-secure');
+    emailSent = await EmailJSSecureService.sendOTPEmail(emailData);
+  }
+  
+  if (!emailSent) {
+    console.log('Secure EmailJS failed, trying PHP fallback...');
+    const { EmailFallbackService } = await import('./email-fallback');
+    emailSent = await EmailFallbackService.sendOTPViaPHP(emailData);
+  }
+  
+  if (!emailSent) {
+    console.log('PHP fallback failed, using mock service for testing...');
+    const { EmailFallbackService } = await import('./email-fallback');
+    emailSent = await EmailFallbackService.sendOTPMock(emailData);
+  }
+
+  if (!emailSent) {
+    throw new Error('Failed to send OTP email via all methods (EmailJS, PHP, Mock)');
+  }
+
+  // Store OTP in backend for verification
+  return handleResponse<{ ok: boolean; message: string; otp: string; expires_in: number }>(
+    await fetch(`${BASE_URL}/otp/send.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp }),
+    })
+  );
+}
+
+export async function verifyOTP(email: string, otpCode: string) {
+  return handleResponse<{ ok: boolean; message: string }>(
+    await fetch(`${BASE_URL}/otp/verify.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp_code: otpCode }),
+    })
   );
 }
 
