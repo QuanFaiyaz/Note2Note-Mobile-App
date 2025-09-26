@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -39,6 +40,11 @@ export default function LoginPage() {
             });
             
             console.log('Login successful:', response);
+            console.log('User data to store:', response.user);
+            
+            // Store user data in AsyncStorage
+            await AsyncStorage.setItem('currentUser', JSON.stringify(response.user));
+            console.log('User data stored in AsyncStorage');
             
             Alert.alert(
                 'Success',

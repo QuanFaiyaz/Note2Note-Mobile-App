@@ -1,4 +1,5 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -13,10 +14,53 @@ export default function NotesPage() {
         loadNotes();
     }, []);
 
+    // Add focus listener to reload notes when tab is focused
+    React.useEffect(() => {
+        const handleFocus = () => {
+            console.log('Notes tab focused, reloading notes...');
+            loadNotes();
+        };
+
+        // Use a simple interval to check for updates
+        const interval = setInterval(handleFocus, 5000); // Check every 5 seconds
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const clearUserData = async () => {
+        try {
+            await AsyncStorage.removeItem('currentUser');
+            console.log('User data cleared from AsyncStorage');
+            Alert.alert('Success', 'User data cleared. Please log in again.');
+            router.replace('/login');
+        } catch (error) {
+            console.error('Failed to clear user data:', error);
+        }
+    };
+
     const loadNotes = async () => {
         try {
             setIsLoading(true);
-            const response = await listNotes(); // Get all public notes
+            
+            // Get current user from AsyncStorage
+            const currentUserData = await AsyncStorage.getItem('currentUser');
+            console.log('Raw AsyncStorage data:', currentUserData);
+            
+            if (!currentUserData) {
+                Alert.alert('Error', 'Please log in to view your notes.');
+                router.replace('/login');
+                return;
+            }
+            
+            const currentUser = JSON.parse(currentUserData);
+            const userId = currentUser.user_id;
+            
+            console.log('Current user data:', currentUser);
+            console.log('Loading notes for user ID:', userId);
+            console.log('User ID type:', typeof userId);
+            
+            const response = await listNotes(userId); // Get only current user's notes
+            console.log('API response:', response);
             setNotes(response.data || []);
         } catch (error) {
             console.error('Failed to load notes:', error);
@@ -60,6 +104,18 @@ export default function NotesPage() {
                     <MaterialIcons name="description" size={24} color="#fff" />
                     <Text style={styles.headerTitle}>My notes</Text>
                 </View>
+                <TouchableOpacity 
+                    onPress={loadNotes} 
+                    style={styles.refreshButton}
+                >
+                    <MaterialIcons name="refresh" size={24} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                    onPress={clearUserData} 
+                    style={styles.clearButton}
+                >
+                    <MaterialIcons name="clear" size={24} color="#fff" />
+                </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.content}>
@@ -326,5 +382,13 @@ const styles = StyleSheet.create({
         color: '#666',
         fontSize: 12,
         marginLeft: 8,
+    },
+    refreshButton: {
+        marginLeft: 16,
+        padding: 8,
+    },
+    clearButton: {
+        marginLeft: 8,
+        padding: 8,
     },
 });

@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker'; // ✅ Import DocumentPicker
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -45,10 +46,19 @@ export default function UploadNotePage() {
 
     setIsLoading(true);
     try {
-      // For now, we'll use a default user_id and subject_id
-      // In a real app, you'd get these from the logged-in user context
+      // Get current user from AsyncStorage
+      const currentUserData = await AsyncStorage.getItem('currentUser');
+      if (!currentUserData) {
+        Alert.alert('Error', 'Please log in to upload notes.');
+        router.replace('/login');
+        return;
+      }
+      
+      const currentUser = JSON.parse(currentUserData);
+      const userId = currentUser.user_id;
+      
       const noteData = {
-        user_id: 1, // TODO: Get from logged-in user
+        user_id: userId, // Use current user's ID
         title: noteTitle.trim(),
         content: noteContent.trim(),
         subject_id: 1, // TODO: Get from selected subject

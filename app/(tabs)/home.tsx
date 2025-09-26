@@ -1,7 +1,8 @@
 import { Feather, FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { listNotes } from '../lib/api';
 
 
 // This is the main component for your home page, designed to match the provided image.
@@ -9,16 +10,37 @@ export default function HomePage() {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeSubject, setActiveSubject] = useState('ALL');
+    const [notes, setNotes] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Placeholder data for demonstration purposes.
-    const myNotes = [
-        { id: '1', title: 'Data Structures - Binary Trees', subject: 'Data Structures', sharedBy: 'Euri Jiao' },
-        { id: '2', title: 'Data Structures - Linked Lists', subject: 'Data Structures', sharedBy: 'Bryan Cancel' },
-        { id: '3', title: 'Calculus Notes', subject: 'Mathematics', sharedBy: 'Hero Buta' },
-        { id: '4', title: 'Operating Systems - Process Management', subject: 'IT in the Mondern Era', sharedBy: 'Jedd Cornejo' },
-        { id: '5', title: 'Linear Algebra - Matrices', subject: 'Mathematics', sharedBy: 'Cedrick Ipong' },
-        { id: '6', title: 'Introduction to Java', subject: 'Object Oriented Programming', sharedBy: 'Jennifer Chio' },
-    ];
+    useEffect(() => {
+        loadNotes();
+    }, []);
+
+    // Add auto-refresh to check for new notes periodically
+    useEffect(() => {
+        const interval = setInterval(() => {
+            console.log('Auto-refreshing home notes...');
+            loadNotes();
+        }, 10000); // Check every 10 seconds
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const loadNotes = async () => {
+        try {
+            setIsLoading(true);
+            console.log('Loading all public notes for home tab...');
+            const response = await listNotes(); // Get all public notes
+            console.log('Home notes loaded:', response.data?.length || 0, 'notes');
+            setNotes(response.data || []);
+        } catch (error) {
+            console.error('Failed to load notes:', error);
+            Alert.alert('Error', 'Failed to load notes. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Function to handle the search logic
     const handleSearch = () => {
@@ -32,20 +54,16 @@ export default function HomePage() {
         // Navigate to the note creation page here.
     };
 
-    const handleLogout = () => {
-        // A temporary action to confirm the button works
-        console.log("Temporary logout button pressed.");
-        router.replace('/login');
-        // Implement your actual logout logic here, such as clearing session data or navigating to a login screen.
-    };
 
     // Helper component for the note cards
     // The w-1/2 class is applied here to ensure two columns.
     type Note = {
-        id: string;
+        note_id: string;
         title: string;
-        subject: string;
-        sharedBy: string;
+        subject_name?: string;
+        course_name?: string;
+        FirstName: string;
+        LastName: string;
     };
 
     const NoteCard: React.FC<{ note: Note }> = ({ note }) => {
@@ -65,10 +83,30 @@ export default function HomePage() {
         Alert.alert("Comments", `Open comments for "${note.title}"`);
     };
 
+    const handleNotePress = () => {
+        // Navigate to note details page
+        router.push({
+            pathname: '/note-details',
+            params: {
+                noteId: note.note_id.toString(),
+                title: note.title,
+                category: note.subject_name || note.course_name || 'General',
+                author: `By ${note.FirstName} ${note.LastName}`,
+                status: 'Public',
+                rating: '0',
+                reviewCount: '0',
+                dateCreated: new Date().toLocaleDateString(),
+                summary: note.title,
+                description: note.title,
+                keyPoints: JSON.stringify([note.title])
+            }
+        });
+    };
+
     const handleShare = async () => {
         try {
             await Share.share({
-                message: `Check out this note: "${note.title}" shared by ${note.sharedBy}`,
+                message: `Check out this note: "${note.title}" shared by ${note.FirstName} ${note.LastName}`,
             });
         } catch (error: any) {
             Alert.alert("Error", error.message);
@@ -76,11 +114,11 @@ export default function HomePage() {
     };
 
     return (
-        <View style={styles.noteCardContainer} key={note.id}>
-            <View style={styles.noteCard}>
+        <View style={styles.noteCardContainer} key={note.note_id}>
+            <TouchableOpacity style={styles.noteCard} onPress={handleNotePress} activeOpacity={0.7}>
                 <Text style={styles.noteTitle}>{note.title}</Text>
-                <Text style={styles.noteSubject}>{note.subject}</Text>
-                <Text style={styles.noteSharedBy}>By {note.sharedBy}</Text>
+                <Text style={styles.noteSubject}>{note.subject_name || note.course_name || 'General'}</Text>
+                <Text style={styles.noteSharedBy}>By {note.FirstName} {note.LastName}</Text>
 
                 {/* Icon row */}
                 <View style={styles.noteIconsRow}>
@@ -112,7 +150,7 @@ export default function HomePage() {
                         />
                     </TouchableOpacity>
                 </View>
-            </View>
+            </TouchableOpacity>
         </View>
     );
 };
@@ -143,8 +181,8 @@ export default function HomePage() {
         <View style={styles.container}>
             {/* Header */}
             <SafeAreaView style={styles.header}>
-                <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-                    <MaterialIcons name="logout" size={24} color="#FFFFFF" />
+                <TouchableOpacity onPress={loadNotes} style={styles.reloadButton}>
+                    <MaterialIcons name="refresh" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
             </SafeAreaView>
 
@@ -206,9 +244,22 @@ export default function HomePage() {
 
                 {/* Notes Grid */}
                 <View style={styles.notesGrid}>
-                    {myNotes.map(note => (
-                        <NoteCard key={note.id} note={note} />
-                    ))}
+                    {isLoading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color="#1E3A8A" />
+                            <Text style={styles.loadingText}>Loading notes...</Text>
+                        </View>
+                    ) : notes.length === 0 ? (
+                        <View style={styles.emptyContainer}>
+                            <MaterialIcons name="description" size={64} color="#ccc" />
+                            <Text style={styles.emptyText}>No notes available</Text>
+                            <Text style={styles.emptySubtext}>Be the first to upload a note!</Text>
+                        </View>
+                    ) : (
+                        notes.map(note => (
+                            <NoteCard key={note.note_id} note={note} />
+                        ))
+                    )}
                 </View>
             </ScrollView>
 
@@ -244,8 +295,7 @@ export default function HomePage() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F3F4F6' },
-    header: { backgroundColor: '#1E3A8A', paddingTop: 32, paddingBottom: 16 },
-    logoutButton: { marginLeft: 16 },
+    header: { backgroundColor: '#1E3A8A', paddingTop: 32, paddingBottom: 16, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
     searchBarWrapper: { marginHorizontal: 16, marginTop: 16, zIndex: 10 },
     searchBar: { backgroundColor: '#fff', padding: 16, borderRadius: 16, elevation: 2 },
     searchBarRow: { flexDirection: 'row', alignItems: 'center' },
@@ -277,4 +327,38 @@ const styles = StyleSheet.create({
     bottomNavRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', height: 68 },
     bottomNavItem: { alignItems: 'center' },
     bottomNavText: { color: '#fff', fontSize: 12, marginTop: 4 },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 50,
+        width: '100%',
+    },
+    loadingText: {
+        color: '#1E3A8A',
+        fontSize: 16,
+        marginTop: 16,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 50,
+        width: '100%',
+    },
+    emptyText: {
+        color: '#1E3A8A',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginTop: 16,
+    },
+    emptySubtext: {
+        color: '#6B7280',
+        fontSize: 14,
+        marginTop: 8,
+    },
+    reloadButton: {
+        marginRight: 16,
+        padding: 8,
+    },
 });

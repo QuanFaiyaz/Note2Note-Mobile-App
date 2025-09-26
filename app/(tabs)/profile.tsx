@@ -1,7 +1,9 @@
 import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+    Alert,
     Image,
     SafeAreaView,
     ScrollView,
@@ -13,10 +15,35 @@ import {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const [user, setUser] = useState<any>(null);
 
-  const handleLogout = () => {
-    console.log("Logged out");
-    router.replace("/login");
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const currentUserData = await AsyncStorage.getItem('currentUser');
+      if (currentUserData) {
+        const currentUser = JSON.parse(currentUserData);
+        setUser(currentUser);
+      }
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Clear user data from AsyncStorage
+      await AsyncStorage.removeItem('currentUser');
+      console.log("User logged out successfully.");
+      Alert.alert('Success', 'Logged out successfully!');
+      router.replace("/login");
+    } catch (error) {
+      console.error('Logout error:', error);
+      Alert.alert('Error', 'Failed to logout. Please try again.');
+    }
   };
 
   return (
@@ -38,9 +65,11 @@ export default function ProfilePage() {
               source={{ uri: "https://i.pinimg.com/1200x/c0/8e/f4/c08ef497e2d0ce221a343cb7e5ccf320.jpg" }} // 👈 Replace with user profile pic
               style={styles.profilePic}
             />
-            <Text style={styles.profileName}>Jimmy Mcgill</Text>
+            <Text style={styles.profileName}>
+              {user ? `${user.FirstName} ${user.LastName}` : 'Loading...'}
+            </Text>
             <Text style={styles.profileEmail}>
-              JMcgillp@students.nu-dasma.edu.ph
+              {user ? user.Email : 'Loading...'}
             </Text>
             <Text style={styles.profileTitle}>My Profile</Text>
 
