@@ -88,6 +88,26 @@ export async function loginWithEmail(payload: { email: string; password: string 
   );
 }
 
+export async function getUserProfile(userId: number) {
+  return handleResponse<{ ok: boolean; user: any }>(
+    await fetch(`${BASE_URL}/users/profile.php?user_id=${userId}`)
+  );
+}
+
+export async function getUserCount() {
+  return handleResponse<{ data: any[] }>(await fetch(`${BASE_URL}/users/list.php`));
+}
+
+export async function updateUserProfile(userId: number, profileData: any) {
+  return handleResponse<{ ok: boolean; message?: string; error?: string }>(
+    await fetch(`${BASE_URL}/users/update.php`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, ...profileData }),
+    })
+  );
+}
+
 export async function listSubjects(courseId?: number) {
   const q = courseId && courseId > 0 ? `?course_id=${courseId}` : '';
   return handleResponse<{ data: any[] }>(await fetch(`${BASE_URL}/subjects/list.php${q}`));

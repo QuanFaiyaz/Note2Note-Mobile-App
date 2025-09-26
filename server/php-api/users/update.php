@@ -6,28 +6,49 @@ $input = read_json_body();
 require_fields($input, ['user_id']);
 
 $userId = (int)$input['user_id'];
-$fields = [];
-$params = [':id' => $userId];
 
-if (isset($input['FirstName'])) { $fields[] = 'FirstName = :fn'; $params[':fn'] = (string)$input['FirstName']; }
-if (isset($input['LastName'])) { $fields[] = 'LastName = :ln'; $params[':ln'] = (string)$input['LastName']; }
-if (isset($input['MiddleName'])) { $fields[] = 'MiddleName = :mn'; $params[':mn'] = (string)$input['MiddleName']; }
-if (isset($input['Mobile_No'])) { $fields[] = 'Mobile_No = :mobile'; $params[':mobile'] = (string)$input['Mobile_No']; }
-if (isset($input['Course'])) { $fields[] = 'Course = :course'; $params[':course'] = (string)$input['Course']; }
-if (isset($input['profile_picture'])) { $fields[] = 'profile_picture = :pic'; $params[':pic'] = (string)$input['profile_picture']; }
-if (isset($input['date_of_birth'])) { $fields[] = 'date_of_birth = :dob'; $params[':dob'] = (string)$input['date_of_birth']; }
-if (isset($input['gender'])) { $fields[] = 'gender = :gender'; $params[':gender'] = (string)$input['gender']; }
-if (isset($input['address'])) { $fields[] = 'address = :address'; $params[':address'] = (string)$input['address']; }
-if (isset($input['emergency_contact'])) { $fields[] = 'emergency_contact = :emergency'; $params[':emergency'] = (string)$input['emergency_contact']; }
-
-if (empty($fields)) {
-    echo json_encode(['ok' => true, 'unchanged' => true]);
+// Check if user exists
+$checkStmt = $pdo->prepare('SELECT user_id FROM users WHERE user_id = :uid LIMIT 1');
+$checkStmt->execute([':uid' => $userId]);
+if (!$checkStmt->fetch()) {
+    http_response_code(404);
+    echo json_encode(['error' => 'User not found']);
     exit;
 }
 
-$fields[] = 'updated_at = CURRENT_TIMESTAMP';
-$sql = 'UPDATE users SET ' . implode(', ', $fields) . ' WHERE user_id = :id';
+// Build update query dynamically based on provided fields
+$updateFields = [];
+$params = [':uid' => $userId];
+
+$allowedFields = [
+    'FirstName', 'LastName', 'MiddleName', 'Mobile_No', 'Course', 
+    'Account_Type', 'date_of_birth', 'gender', 'address', 'emergency_contact'
+];
+
+foreach ($allowedFields as $field) {
+    if (isset($input[$field])) {
+        $updateFields[] = "$field = :$field";
+        $params[":$field"] = $input[$field];
+    }
+}
+
+if (empty($updateFields)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'No fields to update']);
+    exit;
+}
+
+// Add updated_at timestamp
+$updateFields[] = 'updated_at = NOW()';
+
+$sql = 'UPDATE users SET ' . implode(', ', $updateFields) . ' WHERE user_id = :uid';
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 
-echo json_encode(['ok' => true]);
+if ($stmt->rowCount() > 0) {
+    echo json_encode(['ok' => true, 'message' => 'Profile updated successfully']);
+} else {
+    http_response_code(400);
+    echo json_encode(['error' => 'No changes made']);
+}
+?>
