@@ -2,7 +2,7 @@
 
 // Use your computer's IP address instead of localhost for mobile/emulator access
 // PHP files are now copied to C:\xampp\htdocs\note2note
-const BASE_URL = 'http://192.168.1.7/note2note';
+const BASE_URL = 'http://192.168.1.14/note2note';
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -18,6 +18,26 @@ export async function listNotes(userId?: number) {
   return handleResponse<{ data: any[] }>(await fetch(`${BASE_URL}/notes/list.php${q}`));
 }
 
+export async function uploadFile(file: any, userId: number) {
+  const formData = new FormData();
+  formData.append('file', {
+    uri: file.uri,
+    type: file.mimeType,
+    name: file.name,
+  } as any);
+  formData.append('user_id', userId.toString());
+
+  return handleResponse<{ ok: boolean; file_path: string; file_name: string; file_size: number; file_type: string }>(
+    await fetch(`${BASE_URL}/files/upload.php`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      body: formData,
+    })
+  );
+}
+
 export async function createNote(payload: {
   user_id: number;
   title: string;
@@ -27,8 +47,6 @@ export async function createNote(payload: {
   file_type?: string;
   file_size?: number;
   is_public?: boolean;
-  is_featured?: boolean;
-  tags?: string;
 }) {
   return handleResponse<{ ok: boolean; note_id: number }>(
     await fetch(`${BASE_URL}/notes/create.php`, {

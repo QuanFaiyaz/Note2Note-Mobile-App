@@ -24,11 +24,12 @@ try {
     }
     
     // Store OTP in database with expiration using database timezone
-    $stmt = $pdo->prepare('INSERT INTO otp_verifications (email, otp_code, purpose, expires_at) VALUES (:email, :otp, :purpose, DATE_ADD(NOW(), INTERVAL 10 MINUTE))');
+    $stmt = $pdo->prepare('INSERT INTO otp_requests (email, otp_code, purpose, expiry_time, status) VALUES (:email, :otp, :purpose, DATE_ADD(NOW(), INTERVAL 10 MINUTE), :status)');
     $stmt->execute([
         ':email' => $email,
         ':otp' => $otp,
-        ':purpose' => 'email_verification'
+        ':purpose' => 'signup',
+        ':status' => 'sent'
     ]);
 
     // Email is sent via EmailJS from frontend, just log for debugging

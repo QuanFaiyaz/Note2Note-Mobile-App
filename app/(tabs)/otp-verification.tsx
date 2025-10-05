@@ -1,14 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { sendOTP, verifyOTP } from "../lib/api";
 
@@ -39,13 +39,17 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
   }, [timeLeft]);
 
   const sendOTPToEmail = async () => {
+    console.log('sendOTPToEmail called for:', email);
     setIsResending(true);
     try {
+      console.log('Calling sendOTP API...');
       const response = await sendOTP(email);
+      console.log('Send OTP response:', response);
       setOtpSent(true);
       setTimeLeft(600); // Reset timer
       Alert.alert("OTP Sent", `Verification code sent to ${email}`);
     } catch (error: any) {
+      console.error('Send OTP error:', error);
       Alert.alert("Error", error.message || "Failed to send OTP");
     } finally {
       setIsResending(false);
@@ -71,17 +75,32 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
   };
 
   const handleVerifyOTP = async () => {
+    console.log('handleVerifyOTP called with OTP:', otp);
+    console.log('Email:', email);
+    
     if (otp.length !== 6) {
+      console.log('OTP length invalid:', otp.length);
       Alert.alert("Error", "Please enter the complete 6-digit code");
       return;
     }
 
     setIsLoading(true);
     try {
-      await verifyOTP(email, otp);
-      // Automatically proceed with account creation
-      onVerificationSuccess();
+      console.log('Calling verifyOTP API...');
+      const response = await verifyOTP(email, otp);
+      console.log('OTP verification response:', response);
+      
+      if (response.ok) {
+        console.log('OTP verification successful, calling onVerificationSuccess');
+        // Automatically proceed with account creation
+        onVerificationSuccess();
+      } else {
+        console.log('OTP verification failed:', response);
+        Alert.alert("Error", response.message || "Invalid OTP code");
+        setOtp("");
+      }
     } catch (error: any) {
+      console.error('OTP verification error:', error);
       Alert.alert("Error", error.message || "Invalid OTP code");
       setOtp("");
     } finally {

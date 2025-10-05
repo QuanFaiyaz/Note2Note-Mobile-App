@@ -114,13 +114,17 @@ export default function NotesPage() {
                 title: note.title,
                 category: note.subject_name || note.course_name || 'General',
                 author: `By ${note.FirstName} ${note.LastName}`,
-                status: note.is_featured ? 'Featured' : 'Public',
-                rating: (note.rating || 0).toString(),
+                status: note.is_public ? 'Public' : 'Private',
+                rating: (note.upvotes || 0).toString(),
                 reviewCount: (note.download_count || 0).toString(),
                 dateCreated: new Date(note.created_at).toLocaleDateString(),
                 summary: note.title,
                 description: note.content,
-                keyPoints: JSON.stringify([note.content])
+                keyPoints: JSON.stringify([note.content]),
+                filePath: note.file_path || '',
+                fileType: note.file_type || '',
+                fileSize: note.file_size ? note.file_size.toString() : '',
+                viewCount: note.view_count ? note.view_count.toString() : '0'
             }
         });
     };

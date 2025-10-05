@@ -18,13 +18,11 @@ if (isset($input['email']) && isset($input['password'])) {
         'FirstName' => (string)($input['firstName'] ?? ''),
         'LastName' => (string)($input['lastName'] ?? ''),
         'MiddleName' => (string)($input['middleName'] ?? ''),
-        'Mobile_No' => (string)($input['mobileNo'] ?? ''),
+        'Phone' => (string)($input['mobileNo'] ?? ''),
         'Course' => (string)($input['course'] ?? ''),
         'Password' => (string)$input['password'],
         'Account_Type' => 'Student',
         'is_Admin' => 0,
-        'status' => 'Active',
-        'email_verified' => 1,
         'otp_verified' => $input['otp_verified'] ?? false, // Preserve the otp_verified flag
     ];
 }
@@ -32,28 +30,35 @@ if (isset($input['email']) && isset($input['password'])) {
 // Only require the fields that actually exist
 require_fields($input, ['Email','Password','FirstName','LastName']);
 
-// Check if OTP was verified
-if (!isset($input['otp_verified']) || !$input['otp_verified'] || $input['otp_verified'] === 'false' || $input['otp_verified'] === 0) {
+// Check if OTP was verified by looking in the database
+$email = (string)$input['Email'];
+$otpCheckStmt = $pdo->prepare('SELECT id FROM otp_requests WHERE email = :email AND status = :status AND purpose = :purpose LIMIT 1');
+$otpCheckStmt->execute([
+    ':email' => $email,
+    ':status' => 'verified',
+    ':purpose' => 'signup'
+]);
+$verifiedOtp = $otpCheckStmt->fetch();
+
+if (!$verifiedOtp) {
     http_response_code(400);
-    echo json_encode(['error' => 'Email must be verified with OTP first']);
+    echo json_encode(['error' => 'Email must be verified with OTP first. Please complete OTP verification.']);
     exit;
 }
 
 try {
     $hash = password_hash((string)$input['Password'], PASSWORD_BCRYPT);
 
-    $stmt = $pdo->prepare('INSERT INTO users (Email, FirstName, LastName, MiddleName, Mobile_No, Course, Account_Type, is_Admin, status, email_verified, Password) VALUES (:email, :fn, :ln, :mn, :mobile, :course, :account_type, :admin, :status, :email_verified, :pwd)');
+    $stmt = $pdo->prepare('INSERT INTO users (Email, FirstName, LastName, MiddleName, Phone, Course, Account_Type, is_Admin, Password) VALUES (:email, :fn, :ln, :mn, :phone, :course, :account_type, :admin, :pwd)');
     $stmt->execute([
         ':email' => (string)$input['Email'],
         ':fn' => (string)$input['FirstName'],
         ':ln' => (string)$input['LastName'],
         ':mn' => (string)$input['MiddleName'],
-        ':mobile' => (string)$input['Mobile_No'],
+        ':phone' => (string)$input['Phone'],
         ':course' => (string)$input['Course'],
         ':account_type' => (string)$input['Account_Type'],
         ':admin' => isset($input['is_Admin']) ? (int)$input['is_Admin'] : 0,
-        ':status' => (string)$input['status'],
-        ':email_verified' => isset($input['email_verified']) ? (int)$input['email_verified'] : 0,
         ':pwd' => $hash,
     ]);
 

@@ -10,27 +10,28 @@ $otpCode = (string)$input['otp_code'];
 
 try {
     // Find valid OTP
-    $stmt = $pdo->prepare('SELECT id, expires_at FROM otp_verifications WHERE email = :email AND otp_code = :otp AND purpose = :purpose AND is_used = 0 AND expires_at > NOW() LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id, expiry_time FROM otp_requests WHERE email = :email AND otp_code = :otp AND purpose = :purpose AND status = :status AND expiry_time > NOW() LIMIT 1');
     $stmt->execute([
         ':email' => $email,
         ':otp' => $otpCode,
-        ':purpose' => 'email_verification'
+        ':purpose' => 'signup',
+        ':status' => 'sent'
     ]);
     
     $otpRecord = $stmt->fetch();
     
     if (!$otpRecord) {
-        // For debugging, let's check if the OTP exists but is used
-        $checkStmt = $pdo->prepare('SELECT id, is_used, expires_at FROM otp_verifications WHERE email = :email AND otp_code = :otp AND purpose = :purpose LIMIT 1');
+        // For debugging, let's check if the OTP exists but is used/expired
+        $checkStmt = $pdo->prepare('SELECT id, status, expiry_time FROM otp_requests WHERE email = :email AND otp_code = :otp AND purpose = :purpose LIMIT 1');
         $checkStmt->execute([
             ':email' => $email,
             ':otp' => $otpCode,
-            ':purpose' => 'email_verification'
+            ':purpose' => 'signup'
         ]);
         $checkRecord = $checkStmt->fetch();
         
         if ($checkRecord) {
-            if ($checkRecord['is_used'] == 1) {
+            if ($checkRecord['status'] == 'verified') {
                 http_response_code(400);
                 echo json_encode(['error' => 'OTP code has already been used']);
                 exit;
@@ -46,9 +47,12 @@ try {
         }
     }
     
-    // Mark OTP as used
-    $updateStmt = $pdo->prepare('UPDATE otp_verifications SET is_used = 1 WHERE id = :id');
-    $updateStmt->execute([':id' => $otpRecord['id']]);
+    // Mark OTP as verified
+    $updateStmt = $pdo->prepare('UPDATE otp_requests SET status = :status, verified_at = NOW() WHERE id = :id');
+    $updateStmt->execute([
+        ':status' => 'verified',
+        ':id' => $otpRecord['id']
+    ]);
     
     echo json_encode(['ok' => true, 'message' => 'OTP verified successfully']);
     

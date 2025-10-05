@@ -10,7 +10,7 @@ if ($userId <= 0) {
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT user_id, Email, FirstName, LastName, MiddleName, Mobile_No, Course, Account_Type, is_Admin, status, email_verified, profile_picture, date_of_birth, gender, address, emergency_contact, created_at, last_login FROM users WHERE user_id = :uid LIMIT 1');
+$stmt = $pdo->prepare('SELECT user_id, Email, FirstName, LastName, MiddleName, Phone, Course, Account_Type, is_Admin, is_active, created_at, updated_at, credibility_score, total_points, level FROM users WHERE user_id = :uid LIMIT 1');
 $stmt->execute([':uid' => $userId]);
 $user = $stmt->fetch();
 

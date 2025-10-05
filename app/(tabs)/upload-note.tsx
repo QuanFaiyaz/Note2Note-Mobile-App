@@ -4,7 +4,7 @@ import * as DocumentPicker from 'expo-document-picker'; // ✅ Import DocumentPi
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { createNote, listSubjects } from '../lib/api';
+import { createNote, listSubjects, uploadFile } from '../lib/api';
 
 export default function UploadNotePage() {
   const router = useRouter();
@@ -57,17 +57,33 @@ export default function UploadNotePage() {
       const currentUser = JSON.parse(currentUserData);
       const userId = currentUser.user_id;
       
+      let fileData = null;
+      
+      // Upload file if one is selected
+      if (selectedFile) {
+        console.log('Uploading file:', selectedFile.name);
+        const uploadResponse = await uploadFile(selectedFile, userId);
+        console.log('File upload response:', uploadResponse);
+        
+        if (uploadResponse.ok) {
+          fileData = {
+            file_path: uploadResponse.file_path,
+            file_type: uploadResponse.file_type,
+            file_size: uploadResponse.file_size,
+          };
+        } else {
+          Alert.alert('Error', 'Failed to upload file. Please try again.');
+          return;
+        }
+      }
+      
       const noteData = {
-        user_id: userId, // Use current user's ID
+        user_id: userId,
         title: noteTitle.trim(),
         content: noteContent.trim(),
         subject_id: 1, // TODO: Get from selected subject
-        file_path: selectedFile?.uri || null,
-        file_type: selectedFile?.mimeType || null,
-        file_size: selectedFile?.size || null,
-        is_public: true, // Make notes public by default
-        is_featured: false,
-        tags: tags.trim() || null,
+        is_public: true,
+        ...fileData, // Include file data if file was uploaded
       };
 
       console.log('Creating note with data:', noteData);

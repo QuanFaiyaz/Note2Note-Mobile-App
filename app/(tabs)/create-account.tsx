@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { listCourses, registerUser } from "../lib/api";
 import OTPVerification from "./otp-verification";
 
@@ -12,6 +12,7 @@ export default function CreateAccount() {
   const [isLoading, setIsLoading] = useState(false);
   const [showOTPVerification, setShowOTPVerification] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [showCoursePicker, setShowCoursePicker] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -29,10 +30,16 @@ export default function CreateAccount() {
 
   const loadCourses = async () => {
     try {
+      console.log('Loading courses...');
       const response = await listCourses();
+      console.log('Courses response:', response);
       setCourses(response.data || []);
+      console.log('Courses loaded successfully:', response.data?.length || 0, 'courses');
     } catch (error) {
       console.error("Failed to load courses:", error);
+      console.error("Error details:", JSON.stringify(error));
+      // Set empty courses array as fallback
+      setCourses([]);
     }
   };
 
@@ -116,13 +123,57 @@ export default function CreateAccount() {
     console.log("OTP verification successful, proceeding with account creation...");
     setIsEmailVerified(true);
     setShowOTPVerification(false);
-    // Automatically proceed with registration
-    handleSignUp();
+    
+    // Call registration directly since we know email is verified
+    proceedWithRegistration();
+  };
+
+  const proceedWithRegistration = async () => {
+    console.log("Proceeding with registration after OTP verification...");
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    try {
+      const registrationData = {
+        email: formData.email.trim(),
+        password: formData.password,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        middleName: formData.middleName.trim() || undefined,
+        mobileNo: formData.phone.trim() || undefined,
+        course: formData.course.trim() || undefined,
+      };
+      console.log("Registration data:", registrationData);
+      
+      const response = await registerUser(registrationData);
+      console.log("Registration response:", response);
+
+      Alert.alert(
+        "Success", 
+        "Account created successfully! You can now log in.",
+        [
+          {
+            text: "OK",
+            onPress: () => router.replace("/login")
+          }
+        ]
+      );
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      Alert.alert("Error", error.message || "Failed to create account. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOTPBack = () => {
     setShowOTPVerification(false);
     setIsEmailVerified(false);
+  };
+
+  const handleCourseSelect = (course: any) => {
+    setFormData({ ...formData, course: course.course_name });
+    setShowCoursePicker(false);
   };
 
   if (showOTPVerification) {
@@ -254,17 +305,17 @@ export default function CreateAccount() {
 
         {/* Course Selection */}
         <Text style={styles.label}>Course (Optional)</Text>
-        <View style={styles.dropdownContainer}>
-          <TextInput
-            style={styles.dropdown}
-            placeholder="Select your course"
-            value={formData.course}
-            onChangeText={(text) => setFormData({ ...formData, course: text })}
-          />
+        <TouchableOpacity 
+          style={styles.dropdownContainer}
+          onPress={() => setShowCoursePicker(true)}
+        >
+          <Text style={[styles.dropdown, !formData.course && styles.dropdownPlaceholder]}>
+            {formData.course || "Select your course"}
+          </Text>
           <TouchableOpacity style={styles.dropdownIcon}>
             <Ionicons name="chevron-down" size={20} color="#666" />
           </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
 
         {/* Sign Up Button */}
         <TouchableOpacity
@@ -291,6 +342,47 @@ export default function CreateAccount() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Course Picker Modal */}
+      <Modal
+        visible={showCoursePicker}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCoursePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Course</Text>
+              <TouchableOpacity 
+                onPress={() => setShowCoursePicker(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.courseList}>
+              {courses.map((course) => (
+                <TouchableOpacity
+                  key={course.course_id}
+                  style={styles.courseItem}
+                  onPress={() => handleCourseSelect(course)}
+                >
+                  <View style={styles.courseInfo}>
+                    <Text style={styles.courseName}>{course.course_name}</Text>
+                    <Text style={styles.courseCode}>{course.course_code}</Text>
+                    {course.course_description && (
+                      <Text style={styles.courseDescription}>{course.course_description}</Text>
+                    )}
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#666" />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -406,5 +498,67 @@ const styles = StyleSheet.create({
   loginText: {
     textAlign: "center",
     color: "#555",
+  },
+  dropdownPlaceholder: {
+    color: "#999",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    width: "90%",
+    maxHeight: "70%",
+    padding: 0,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  modalCloseButton: {
+    padding: 5,
+  },
+  courseList: {
+    maxHeight: 400,
+  },
+  courseItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  courseInfo: {
+    flex: 1,
+  },
+  courseName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  courseCode: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 2,
+  },
+  courseDescription: {
+    fontSize: 12,
+    color: "#999",
+    lineHeight: 16,
   },
 });

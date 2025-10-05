@@ -1,7 +1,8 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import * as React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function NoteDetailsPage() {
     const router = useRouter();
@@ -19,7 +20,11 @@ export default function NoteDetailsPage() {
         dateCreated: params.dateCreated,
         summary: params.summary,
         description: params.description,
-        keyPoints: params.keyPoints ? JSON.parse(params.keyPoints as string) : []
+        keyPoints: params.keyPoints ? JSON.parse(params.keyPoints as string) : [],
+        filePath: params.filePath as string,
+        fileType: params.fileType as string,
+        fileSize: params.fileSize as string,
+        viewCount: parseInt(params.viewCount as string) || 0
     };
 
     const renderStars = (rating: number) => {
@@ -49,6 +54,85 @@ export default function NoteDetailsPage() {
         return stars;
     };
 
+    const handleViewPDF = async () => {
+        if (!noteData.filePath) {
+            Alert.alert('No File', 'This note does not have an attached file.');
+            return;
+        }
+
+        try {
+            const fileUrl = `http://192.168.1.14/note2note/files/serve-file.php?file=${noteData.filePath}`;
+            console.log('Opening PDF:', fileUrl);
+            console.log('File path from params:', noteData.filePath);
+            console.log('Constructed URL:', fileUrl);
+            
+            // Test the URL first
+            const response = await fetch(fileUrl, { method: 'HEAD' });
+            console.log('URL test response:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                Alert.alert('Error', `Cannot access file: ${response.status} ${response.statusText}`);
+                return;
+            }
+            
+            // Open PDF in browser
+            await WebBrowser.openBrowserAsync(fileUrl);
+        } catch (error) {
+            console.error('Error opening PDF:', error);
+            Alert.alert('Error', `Could not open the PDF file: ${error.message}`);
+        }
+    };
+
+    const handleDownloadPDF = async () => {
+        if (!noteData.filePath) {
+            Alert.alert('No File', 'This note does not have an attached file.');
+            return;
+        }
+
+        try {
+            const fileUrl = `http://192.168.1.14/note2note/files/serve-file.php?file=${noteData.filePath}`;
+            console.log('Downloading PDF:', fileUrl);
+            console.log('File path from params:', noteData.filePath);
+            console.log('Constructed URL:', fileUrl);
+            
+            // Test the URL first
+            const response = await fetch(fileUrl, { method: 'HEAD' });
+            console.log('URL test response:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                Alert.alert('Error', `Cannot access file: ${response.status} ${response.statusText}`);
+                return;
+            }
+            
+            // Open download link
+            const supported = await Linking.canOpenURL(fileUrl);
+            if (supported) {
+                await Linking.openURL(fileUrl);
+            } else {
+                Alert.alert('Error', 'Cannot open the download link.');
+            }
+        } catch (error) {
+            console.error('Error downloading PDF:', error);
+            Alert.alert('Error', `Could not download the PDF file: ${error.message}`);
+        }
+    };
+
+    const formatFileSize = (bytes: string) => {
+        const size = parseInt(bytes);
+        if (size === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(size) / Math.log(k));
+        return parseFloat((size / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    const getFileIcon = (fileType: string) => {
+        if (fileType.includes('pdf')) return 'picture-as-pdf';
+        if (fileType.includes('word') || fileType.includes('document')) return 'description';
+        if (fileType.includes('image')) return 'image';
+        return 'attach-file';
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             {/* Header */}
@@ -67,7 +151,7 @@ export default function NoteDetailsPage() {
                         <MaterialIcons name="bookmark-border" size={24} color="#fff" />
                         <Text style={styles.saveText}>Save to library</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.downloadButton}>
+                    <TouchableOpacity style={styles.downloadButton} onPress={handleDownloadPDF}>
                         <MaterialIcons name="file-download" size={24} color="#fff" />
                     </TouchableOpacity>
                 </View>
@@ -105,6 +189,52 @@ export default function NoteDetailsPage() {
                         </View>
                     </View>
                 </View>
+
+                {/* File Attachment */}
+                {noteData.filePath && (
+                    <View style={styles.contentCard}>
+                        <Text style={styles.contentTitle}>Attached File</Text>
+                        
+                        <View style={styles.fileCard}>
+                            <View style={styles.fileInfo}>
+                                <MaterialIcons 
+                                    name={getFileIcon(noteData.fileType)} 
+                                    size={40} 
+                                    color="#1E3A8A" 
+                                />
+                                <View style={styles.fileDetails}>
+                                    <Text style={styles.fileName}>
+                                        {noteData.fileType.includes('pdf') ? 'PDF Document' : 'Attached File'}
+                                    </Text>
+                                    <Text style={styles.fileSize}>
+                                        {noteData.fileSize ? formatFileSize(noteData.fileSize) : 'Unknown size'}
+                                    </Text>
+                                    <Text style={styles.fileType}>
+                                        {noteData.fileType || 'Unknown type'}
+                                    </Text>
+                                </View>
+                            </View>
+                            
+                            <View style={styles.fileActions}>
+                                <TouchableOpacity 
+                                    style={styles.viewButton} 
+                                    onPress={handleViewPDF}
+                                >
+                                    <MaterialIcons name="visibility" size={20} color="#fff" />
+                                    <Text style={styles.buttonText}>View</Text>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity 
+                                    style={styles.downloadFileButton} 
+                                    onPress={handleDownloadPDF}
+                                >
+                                    <MaterialIcons name="download" size={20} color="#fff" />
+                                    <Text style={styles.buttonText}>Download</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                )}
 
                 {/* Note Content */}
                 <View style={styles.contentCard}>
@@ -314,5 +444,69 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         marginTop: 12,
         fontStyle: 'italic',
+    },
+    // File attachment styles
+    fileCard: {
+        backgroundColor: '#f8f9ff',
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#e0e7ff',
+    },
+    fileInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    fileDetails: {
+        marginLeft: 12,
+        flex: 1,
+    },
+    fileName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#1E3A8A',
+        marginBottom: 4,
+    },
+    fileSize: {
+        fontSize: 12,
+        color: '#666',
+        marginBottom: 2,
+    },
+    fileType: {
+        fontSize: 12,
+        color: '#666',
+    },
+    fileActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    viewButton: {
+        backgroundColor: '#1E3A8A',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 8,
+        flex: 1,
+        marginRight: 8,
+        justifyContent: 'center',
+    },
+    downloadFileButton: {
+        backgroundColor: '#28a745',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 8,
+        flex: 1,
+        marginLeft: 8,
+        justifyContent: 'center',
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '600',
+        marginLeft: 6,
     },
 });
